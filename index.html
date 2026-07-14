@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Liner Tracker</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<style>
+:root{color-scheme:light;
+ --navy:#0b2942;--navy2:#13395c;--teal:#0e7c8b;--ink:#16212e;--muted:#5d6b7d;
+ --line:#e4e9f0;--bg:#eef1f5;--card:#fff;--green:#1d8a4e;--amber:#c98a14;--red:#c0392b;
+ --asia:#0e7c8b;--us:#c0563b;}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;}
+.wrap{max-width:1160px;margin:0 auto;padding:0 16px 56px;}
+.hero{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border-radius:0 0 16px 16px;padding:22px 24px 18px;margin-bottom:16px;box-shadow:0 8px 24px rgba(11,41,66,.18);}
+.hero .bar{height:3px;width:50px;background:var(--teal);border-radius:2px;margin-bottom:12px;}
+.hero h1{margin:0;font-size:21px;font-weight:700;}
+.hero .sub{font-size:12.5px;color:#aecbe0;margin-top:4px;}
+.controls{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;gap:24px;flex-wrap:wrap;}
+.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:700;margin-bottom:7px;}
+.seg{display:inline-flex;flex-wrap:wrap;gap:6px;}
+.seg button{border:1px solid var(--line);background:#f7f9fb;color:var(--navy);font-weight:600;padding:7px 13px;border-radius:8px;cursor:pointer;font-size:13px;}
+.seg button.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.mapcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 16px 14px;margin-bottom:16px;}
+.maphead{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;flex-wrap:wrap;gap:10px;}
+.maphead .t{font-size:12.5px;font-weight:700;color:var(--navy);}
+.mlegend{display:flex;gap:13px;font-size:11px;color:var(--muted);font-weight:600;}
+.mlegend i{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle;}
+#map{width:100%;height:340px;border-radius:10px;border:1px solid #d4e0e7;z-index:0;}
+.svc-block{margin-bottom:26px;}
+.svc-title{font-size:16px;font-weight:800;color:var(--navy);margin:6px 2px 12px;display:flex;align-items:center;gap:9px;}
+.svc-title .pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:11px;background:var(--teal);color:#fff;letter-spacing:.02em;}
+.boards{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:780px){.boards{grid-template-columns:1fr;}}
+.board{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;}
+.board-h{padding:11px 15px;font-weight:700;font-size:13px;color:#fff;display:flex;align-items:center;gap:8px;}
+.board-h.asia{background:var(--asia);} .board-h.us{background:var(--us);}
+.board-h .small{font-weight:500;font-size:11.5px;opacity:.9;}
+.sail{border-bottom:1px solid #eef2f6;}
+.sail:last-child{border-bottom:none;}
+.sail-h{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;}
+.sail-h:hover{background:#fafcfe;}
+.sail-dep{font-weight:800;color:var(--navy);font-size:13px;min-width:64px;}
+.sail-dep small{display:block;font-weight:600;color:var(--muted);font-size:10px;}
+.sail-v{flex:1;min-width:0;}
+.sail-v .nm{font-weight:700;color:var(--ink);}
+.sail-v .vy{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--muted);}
+.ais{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;white-space:nowrap;}
+.dot{width:8px;height:8px;border-radius:50%;}
+.dot.ok{background:var(--green);}.dot.warn{background:var(--amber);}.dot.bad{background:var(--red);}
+.chev{color:var(--muted);font-size:13px;transition:.15s;}
+.sail.open .chev{transform:rotate(180deg);}
+.detail{display:none;padding:4px 16px 16px;background:#fbfcfe;}
+.sail.open .detail{display:block;}
+.detgrid{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;}
+@media(max-width:560px){.detgrid{grid-template-columns:1fr;}}
+.route{list-style:none;margin:8px 0 0;padding:0;position:relative;}
+.route li{position:relative;padding:0 0 11px 18px;border-left:2px solid #d7e0e6;}
+.route li:last-child{border-left-color:transparent;}
+.route li::before{content:"";position:absolute;left:-5px;top:3px;width:8px;height:8px;border-radius:50%;background:#9fb3bd;}
+.route li.first::before{background:var(--asia);} .route li.last::before{background:var(--us);}
+.route .pn{font-weight:700;color:var(--navy);font-size:12.5px;}
+.route .cd{font-size:10px;color:var(--muted);font-weight:600;}
+.route .tm{font-size:11px;color:var(--muted);}
+.route .cy{display:inline-block;margin-top:2px;font-size:10.5px;font-weight:700;color:var(--asia);background:#eef6fb;border-radius:4px;padding:1px 6px;}
+.route .cy.na{color:#9fb3bd;background:#f3f6f8;font-weight:600;}
+.cuts{margin-top:8px;}
+.cuts .ch{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:6px;}
+.cuts table{width:100%;border-collapse:collapse;font-size:12px;}
+.cuts td{padding:4px 6px;border-bottom:1px solid #eef2f6;}
+.cuts td:first-child{font-weight:600;color:var(--muted);width:48%;}
+.cuts td:last-child{font-weight:700;color:var(--ink);text-align:right;}
+.empty{padding:20px;text-align:center;color:var(--muted);font-style:italic;font-size:12.5px;}
+.note{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-top:18px;font-size:12.5px;color:var(--muted);line-height:1.55;}
+.notif{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:16px;overflow:hidden;box-shadow:0 1px 3px rgba(16,42,67,.05);}
+.notif-h{display:flex;align-items:center;gap:9px;padding:11px 16px;cursor:pointer;background:linear-gradient(90deg,#ffffff,#f5fafc);}
+.notif-h .bell{font-size:15px;}
+.notif-h .ti{font-weight:800;color:var(--navy);font-size:13px;}
+.notif-h .cnt{background:var(--red);color:#fff;font-size:11px;font-weight:800;border-radius:10px;padding:1px 9px;}
+.notif-h .cnt.zero{background:var(--green);}
+.notif-h .since{margin-left:auto;font-size:11px;color:var(--muted);}
+.notif-h .chev{color:var(--muted);font-size:13px;transition:.15s;}
+.notif.open .chev{transform:rotate(180deg);}
+.notif-body{display:none;padding:4px 16px 12px;}
+.notif.open .notif-body{display:block;}
+.chg{display:flex;gap:9px;align-items:baseline;padding:7px 0;border-bottom:1px solid #f1f5f8;font-size:12.5px;}
+.chg:last-child{border-bottom:none;}
+.chg .tag{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:2px 6px;border-radius:4px;white-space:nowrap;flex:none;}
+.tag.added{background:#e6f7ee;color:#127a43;} .tag.removed{background:#fde8e8;color:#b42318;}
+.tag.swap{background:#fff3e0;color:#b35309;} .tag.dep,.tag.arr,.tag.resched{background:#eaf1fb;color:#1a56b8;}
+.chg .svc{font-weight:700;color:var(--muted);font-size:11px;white-space:nowrap;flex:none;}
+.chg .txt{color:var(--ink);} .chg .vn{font-weight:700;color:var(--navy);}
+.chg .pchg{font-weight:600;color:var(--navy);}
+.chg .oldv{color:var(--muted);}
+.chg .newv{color:var(--teal);font-weight:700;}
+.chg .dlt{color:var(--amber);font-size:11px;margin-left:1px;}
+.chg .poc{margin-left:auto;font-size:11px;color:var(--teal);text-decoration:none;white-space:nowrap;flex:none;padding-left:10px;}
+.chg .poc:hover{text-decoration:underline;}
+.sail.chgd{background:#fffdf3;}
+.sail.chgd .sail-dep{box-shadow:inset 3px 0 0 var(--amber);padding-left:6px;}
+.cbadge{display:inline-block;font-size:8.5px;font-weight:800;border-radius:3px;padding:1px 5px;margin-left:6px;vertical-align:middle;letter-spacing:.03em;}
+.cbadge.new{background:#e6f7ee;color:#127a43;} .cbadge.swap{background:#fff3e0;color:#b35309;} .cbadge.upd{background:#eaf1fb;color:#1a56b8;}
+.cbadge.omit{background:#fdecd8;color:#9a5b00;border:1px solid #f0c98a;}
+.tag.omit{background:#fdecd8;color:#9a5b00;}
+.sail.omit-row{background:#fffaf2;}
+.sail.omit-row .sail-dep{box-shadow:inset 3px 0 0 #d98a00;padding-left:6px;}
+.cong{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:16px;overflow:hidden;box-shadow:0 1px 3px rgba(16,42,67,.05);}
+.cong-h{display:flex;align-items:center;gap:9px;padding:11px 16px;background:linear-gradient(90deg,#ffffff,#fbf6f5);border-bottom:1px solid #f1f5f8;}
+.cong-h .ico{font-size:15px;} .cong-h .ti{font-weight:800;color:var(--navy);font-size:13px;}
+.cong-h .ok{margin-left:auto;font-size:11.5px;color:var(--green);font-weight:600;}
+.cong-h .hint{margin-left:auto;font-size:10.5px;color:var(--muted);}
+.cong-body{padding:8px 16px 12px;}
+.crow{display:flex;gap:9px;align-items:baseline;padding:6px 0;border-bottom:1px solid #f5f8fa;font-size:12.5px;}
+.crow:last-child{border-bottom:none;}
+.cdot{width:9px;height:9px;border-radius:50%;flex:none;position:relative;top:1px;}
+.cdot.heavy{background:var(--red);} .cdot.building{background:var(--amber);}
+.crow b{color:var(--navy);} .crow .ev{color:var(--ink);}
+.lvl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:2px 6px;border-radius:4px;white-space:nowrap;flex:none;}
+.lvl.heavy{background:#fde8e8;color:#b42318;} .lvl.building{background:#fff3e0;color:#b35309;}
+.mkt{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px 16px;margin-bottom:16px;}
+.mkt-h{display:flex;align-items:center;gap:9px;margin-bottom:6px;flex-wrap:wrap;}
+.mkt-h .ti{font-weight:800;color:var(--navy);font-size:14px;}
+.mkt-h .pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:11px;background:var(--teal);color:#fff;}
+.mkt .sub2{font-size:11.5px;color:var(--muted);margin-bottom:12px;line-height:1.5;}
+.mkt-filt{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px;}
+.mkt-filt .seg button[disabled]{opacity:.4;cursor:not-allowed;}
+.mkt-scroll{overflow-x:auto;}
+table.mgrid{border-collapse:collapse;width:100%;font-size:11.5px;min-width:780px;}
+table.mgrid th,table.mgrid td{border:1px solid var(--line);padding:6px 7px;vertical-align:top;text-align:left;}
+table.mgrid thead th{background:var(--navy);color:#fff;font-weight:700;text-align:center;white-space:nowrap;font-size:11px;}
+table.mgrid th.lane{background:var(--navy2);text-align:left;min-width:150px;}
+table.mgrid td.lane{background:#f7f9fb;font-weight:700;color:var(--navy);}
+table.mgrid td.lane .svc2{display:block;font-weight:600;color:var(--muted);font-size:10px;margin-top:2px;}
+.mcell{cursor:pointer;border-radius:5px;padding:2px 4px;}
+.mcell:hover{background:#eef6fb;}
+.mcell .vshort{display:block;font-weight:700;color:var(--navy);font-size:10.5px;}
+.mcell .arr{display:block;font-weight:700;color:var(--us);}
+.mcell .cyv{display:block;color:var(--asia);font-weight:600;font-size:10px;}
+.mcell.sel{background:#dceffb;outline:2px solid var(--teal);}
+td.empty2{color:#c3ccd6;text-align:center;}
+.mdetail{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px;display:none;}
+.mdetail.show{display:block;}
+.mstub{margin-top:12px;font-size:11.5px;color:var(--muted);background:#f7f9fb;border:1px dashed var(--line);border-radius:8px;padding:10px 12px;line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <div class="bar"></div>
+    <h1>Liner Tracker — Asia ⇄ US gateway schedule</h1>
+    <div class="sub">Empire · America · Lone Star Express · Chinook &nbsp;|&nbsp; data as of <b id="updated">loading…</b> &nbsp;|&nbsp; manually refreshed snapshot</div>
+  </div>
+
+  <div id="notif"></div>
+  <div id="congestion"></div>
+
+  <div class="controls">
+    <div>
+      <div class="lbl">Service</div>
+      <div class="seg" id="svcSeg">
+        <button data-svc="ALL" class="active">All</button>
+        <button data-svc="EM">Empire</button>
+        <button data-svc="AM">America</button>
+        <button data-svc="LS">Lone Star</button>
+        <button data-svc="CH">Chinook</button>
+      </div>
+    </div>
+    <div>
+      <div class="lbl">Direction</div>
+      <div class="seg" id="dirSeg">
+        <button data-dir="ALL" class="active">Both</button>
+        <button data-dir="asiaOut">Asia → US</button>
+        <button data-dir="usOut">US → Asia</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="boards"></div>
+
+  <div class="mapcard">
+    <div class="maphead">
+      <span class="t">Vessel positions</span>
+      <span class="mlegend">
+        <span><i style="background:#0e7c8b"></i>Empire</span>
+        <span><i style="background:#4a52b0"></i>America</span>
+        <span><i style="background:#c07a1e"></i>Lone Star</span>
+        <span><i style="background:#2e7d4f"></i>Chinook</span>
+        <span id="mapcount"></span>
+      </span>
+    </div>
+    <div id="map"></div>
+  </div>
+
+  <div id="market"></div>
+
+  <div class="note">
+    <b>How to read this.</b> Each service shows two boards: <b>Asia → US</b> and <b>US → Asia</b>, built from the <b>last regional port</b> 7 weeks ahead, so vessels already working the region appear first (furthest advanced at the top). Each card shows vessel, voyage, IMO and capacity (<b>TEU</b>). Click a sailing for its <b>full port-by-port route</b> with ETA / ETD and the <b>CY cut-off at each load port</b> (N/A where MSC publishes none). Positions and last AIS come from VesselFinder (ocean-basin precision). Roster is rebuilt from MSC's live schedule.
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+const SVCS=["EM","AM","LS","CH"];
+const SVCNAME={EM:"Empire",AM:"America",LS:"Lone Star Express",CH:"Chinook"};
+const SVCCOLOR={EM:"#0e7c8b",AM:"#4a52b0",LS:"#c07a1e",CH:"#2e7d4f"};
+let DATA={}, curSvc="ALL", curDir="ALL", map=null, markerLayer=null;
+let PREV=null, CHANGES={}, CHANGELIST=[], notifOpen=false, CONGLIST=[];
+let OMITS={}, OMITLIST=[], PHASEOUT=[], PHASEMAP={}, SNAPSHOT='';
+// Authoritative service rotations (canonical port calls per leg). A vessel that
+// skips one of these is flagged as a port omission. al = name aliases for ports
+// whose UN code may vary in the feed.
+const ROTATION={
+ EM:{asiaOut:[{c:'CNSHA',n:'Shanghai'},{c:'CNNGB',n:'Ningbo'},{c:'KRPUS',n:'Busan'}],
+     usOut:[{c:'USNYC',n:'New York'},{c:'USBAL',n:'Baltimore'},{c:'USORF',n:'Norfolk'},{c:'USPEF',n:'Port Everglades'},{c:'PAROD',n:'Rodman / Panama',al:['rodman','panama','balboa']}]},
+ AM:{asiaOut:[{c:'THLCH',n:'Laem Chabang'},{c:'CNYTN',n:'Yantian'},{c:'VNHPH',n:'Haiphong'},{c:'VNVUT',n:'Vung Tau'},{c:'SGSIN',n:'Singapore'},{c:'USNYC',n:'New York'}],
+     usOut:[{c:'USBAL',n:'Baltimore'},{c:'USORF',n:'Norfolk'}]},
+ LS:{asiaOut:[{c:'VNVUT',n:'Vung Tau'},{c:'CNYTN',n:'Yantian'},{c:'CNNGB',n:'Ningbo'},{c:'CNSHA',n:'Shanghai'},{c:'KRPUS',n:'Busan'}],
+     usOut:[{c:'USHOU',n:'Houston'},{c:'USTPA',n:'Tampa'},{c:'USMIA',n:'Miami'},{c:'BSFPO',n:'Free Port',al:['freeport','free port','grand bahama']},{c:'SGSIN',n:'Singapore'}]},
+ CH:{asiaOut:[{c:'CNYTN',n:'Yantian'},{c:'CNNGB',n:'Ningbo'},{c:'CNSHA',n:'Shanghai'},{c:'CNTAO',n:'Qingdao'},{c:'KRPUS',n:'Busan'}],
+     usOut:[{c:'USSEA',n:'Seattle'},{c:'CAVAN',n:'Vancouver'},{c:'CAPRR',n:'Prince Rupert'}]}
+};
+// Loading-region of each canonical port (AIS area substrings). Used to tell a
+// genuine leading omission (vessel not yet in the region) from a port the vessel
+// already physically sailed (vessel already in/near the loading region).
+const OMREG={
+ CNSHA:['china coast','east asia','yellow sea'],CNNGB:['china coast','east asia'],
+ CNYTN:['south china sea','south east asia','china coast','east asia'],
+ KRPUS:['east asia','china coast','yellow sea','sea of japan'],
+ VNVUT:['south east asia','south china sea','gulf of thailand'],
+ VNHPH:['south east asia','south china sea'],THLCH:['south east asia','gulf of thailand','south china sea'],
+ SGSIN:['south east asia','south china sea'],
+ USNYC:['us east coast','north west atlantic'],USBAL:['us east coast'],USORF:['us east coast'],
+ USPEF:['us east coast','caribbean'],PAROD:['caribbean','gulf of mexico','central america'],
+ USHOU:['gulf of mexico'],USTPA:['gulf of mexico'],USMIA:['us east coast','caribbean','gulf of mexico'],
+ BSFPO:['caribbean','gulf of mexico','north west atlantic'],
+ CNTAO:['east asia','china coast','yellow sea'],USSEA:['north america west coast','north pacific'],CAVAN:['north america west coast','north pacific'],CAPRR:['north america west coast','north pacific']
+};
+function omMatch(route,cp){
+  return route.find(function(r){
+    if(r.code===cp.c)return true;
+    if(cp.al){var pn=(r.port||'').toLowerCase();return cp.al.some(function(a){return pn.indexOf(a)>=0;});}
+    return false;
+  })||null;
+}
+function omRegionMatch(pos,code){
+  var rs=OMREG[code]; if(!rs)return false;
+  var a=(pos||'').toLowerCase();
+  return rs.some(function(r){return a.indexOf(r)>=0;});
+}
+// A canonical port is OMITTED only if it is absent AND the next scheduled port
+// after it still has a FUTURE ETA (strictly later calendar day than the snapshot
+// date). This skips ports a vessel already physically passed (already-sailed),
+// while still catching interior gaps (RIKKU/Ningbo) and not-yet-started leading
+// gaps (MUMBAI/Shanghai). Runs for every vessel on both legs.
+function computeOmissions(){
+  OMITS={}; OMITLIST=[]; PHASEOUT=[]; PHASEMAP={};
+  var now=pday(SNAPSHOT)||0;
+  SVCS.forEach(function(svc){
+    var sv=DATA[svc]; if(!sv)return;
+    ['asiaOut','usOut'].forEach(function(dir){
+      var canon=(ROTATION[svc]||{})[dir]; if(!canon)return;
+      var dl=dir==='asiaOut'?'Asia→US':'US→Asia';
+      (sv[dir]||[]).forEach(function(s){
+        var route=s.route||[]; if(route.length<=2)return;   // origin→destination only: schedule detail not yet published, not an omission
+        var present=canon.map(function(cp){return omMatch(route,cp);});
+        var firstP=-1; for(var fi=0;fi<present.length;fi++){if(present[fi]){firstP=fi;break;}}
+        if(firstP<0)return;                                  // no canonical port called -> can't judge
+        var fresh=(s.aisMin!=null&&s.aisMin<=4320)&&s.pos&&s.pos!=='-';  // AIS < ~3 days old -> position trustworthy
+        var inLoad=fresh&&omRegionMatch(s.pos,canon[firstP].c);          // vessel RELIABLY in the loading region of its first call
+        var disch=route[route.length-1];
+        var omits=[];
+        for(var i=0;i<canon.length;i++){
+          if(present[i])continue;
+          var j=i+1; while(j<canon.length&&!present[j])j++;
+          var bound=(j<canon.length)?present[j]:disch;   // next called canonical port, else final discharge
+          if(!bound)continue;
+          var bt=(bound.eta&&bound.eta!=='-')?bound.eta:bound.etd;
+          var bo=pday(bt);
+          if(bo==null||bo<=now)continue;                 // bound not strictly future -> port already passed
+          if(i<firstP){                                  // LEADING port (before the vessel's first scheduled call)
+            if(inLoad)continue;                          // only suppress when AIS is fresh AND vessel is in the loading region (already sailed). Stale AIS (e.g. RANIA) -> flag
+          }
+          omits.push(canon[i].n);                        // interior gap, or leading gap with vessel still far from the region
+        }
+        if(omits.length){
+          var rotset={}; ['asiaOut','usOut'].forEach(function(dd){((((ROTATION[svc]||{})[dd])||[])).forEach(function(cp){rotset[cp.c]=1;});});
+          var foreign=route.filter(function(r){return r.code&&!rotset[r.code]&&!/^US/.test(r.code)&&!/^PA/.test(r.code)&&!/^BS/.test(r.code);}).map(function(r){return r.port;});
+          if(foreign.length>=2){
+            PHASEMAP[svc+'|'+dir+'|'+s.voyage]=foreign;
+            PHASEOUT.push({svc:svc,dir:dir,dl:dl,vessel:s.vessel,voyage:s.voyage,via:foreign,dest:s.dest||''});
+          } else {
+            OMITS[svc+'|'+dir+'|'+s.voyage]=omits;
+            OMITLIST.push({svc:svc,dir:dir,dl:dl,vessel:s.vessel,voyage:s.voyage,ports:omits});
+          }
+        }
+      });
+    });
+  });
+}
+const CPORTS={
+ CNSHA:{name:'Shanghai',region:['china coast','east asia'],alias:['shanghai','yangshan','waigaoqiao']},
+ CNNGB:{name:'Ningbo',region:['china coast','east asia'],alias:['ningbo','beilun','meishan']},
+ CNYTN:{name:'Yantian',region:['china coast','south east asia','south china sea','east asia'],alias:['yantian','shenzhen']},
+ KRPUS:{name:'Busan',region:['east asia','china coast','yellow sea','sea of japan'],alias:['busan','pusan']},
+ VNVUT:{name:'Vung Tau',region:['south east asia','south china sea','gulf of thailand'],alias:['vung tau','cai mep']},
+ VNHPH:{name:'Haiphong',region:['south east asia','south china sea'],alias:['haiphong','hai phong']},
+ THLCH:{name:'Laem Chabang',region:['south east asia','gulf of thailand'],alias:['laem chabang']},
+ SGSIN:{name:'Singapore',region:['south east asia','south china sea'],alias:['singapore']},
+ USNYC:{name:'New York',region:['us east coast','north west atlantic'],alias:['new york']},
+ USBAL:{name:'Baltimore',region:['us east coast'],alias:['baltimore']},
+ USORF:{name:'Norfolk',region:['us east coast'],alias:['norfolk']},
+ USHOU:{name:'Houston',region:['gulf of mexico'],alias:['houston']}
+};
+function pday(s){var M={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};var m=(s||'').match(/(\d{1,2}) (\w{3})/);return m?(M[m[2]]||0)*31+(+m[1]):null;}
+function computeCongestion(){
+  CONGLIST=[];
+  // 1) AIS dwell: unique vessels idling near a port they're heading to
+  var seen={}, wait={};
+  SVCS.forEach(svc=>{var sv=DATA[svc];if(!sv)return;['asiaOut','usOut'].forEach(d=>(sv[d]||[]).forEach(s=>{
+    if(!s.imo||seen[s.imo])return;seen[s.imo]=1;
+    var sp=parseFloat(s.spd);var area=(s.pos||'').toLowerCase();var dest=(s.dest||'').toLowerCase();
+    if(isNaN(sp)||sp>=2||(s.aisMin||0)>10080||!dest)return;            // moving, berthed, stale, or unknown dest
+    for(var code in CPORTS){var P=CPORTS[code];
+      var destMatch=P.alias.some(a=>dest.indexOf(a)>=0);
+      var nearby=P.region.some(r=>area.indexOf(r)>=0);
+      if(destMatch&&nearby){(wait[code]=wait[code]||[]).push(s.vessel+' '+s.spd);break;}
+    }
+  }));});
+  // 2) schedule drift: avg ETD change at each port vs previous snapshot
+  var prevEtd={};
+  if(PREV&&PREV.services)SVCS.forEach(svc=>{var sv=PREV.services[svc];if(!sv)return;['asiaOut','usOut'].forEach(d=>(sv[d]||[]).forEach(s=>s.route.forEach(p=>{if(CPORTS[p.code])prevEtd[s.voyage+'|'+p.code]=pday(p.etd);})));});
+  var slipAgg={};
+  SVCS.forEach(svc=>{var sv=DATA[svc];if(!sv)return;['asiaOut','usOut'].forEach(d=>(sv[d]||[]).forEach(s=>s.route.forEach(p=>{
+    if(!CPORTS[p.code])return;var pv=prevEtd[s.voyage+'|'+p.code];var cv=pday(p.etd);
+    if(pv!=null&&cv!=null){(slipAgg[p.code]=slipAgg[p.code]||[]).push(cv-pv);}
+  })));});
+  for(var code in CPORTS){
+    var w=(wait[code]||[]).length;
+    var arr=slipAgg[code]||[];var slip=arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0;
+    var level=(w>=1||slip>=1.5)?'heavy':(slip>=0.5?'building':'normal');
+    if(level==='normal')continue;
+    var parts=[];
+    if(w)parts.push(w+' vessel'+(w>1?'s':'')+' idling near port ('+(wait[code]).join(', ')+')');
+    if(slip>=0.5)parts.push('schedule drift +'+slip.toFixed(1)+' day'+(slip>=1.5?'s':''));
+    CONGLIST.push({code:code,name:CPORTS[code].name,level:level,w:w,slip:slip,ev:parts.join(' · ')||'minor signal'});
+  }
+  CONGLIST.sort((a,b)=>(b.w-a.w)||(b.slip-a.slip));
+}
+function renderCongestion(){
+  var el=document.getElementById('congestion');
+  if(!CONGLIST.length){el.innerHTML=`<div class="cong"><div class="cong-h"><span class="ico">⚓</span><span class="ti">Port watch — congestion</span><span class="ok">No congestion signals in the current fleet snapshot</span></div></div>`;return;}
+  var rows=CONGLIST.map(c=>`<div class="crow"><span class="lvl ${c.level}">${c.level==='heavy'?'congested':'building'}</span><b>${c.name}</b><span class="ev">— ${c.ev}</span></div>`).join('');
+  el.innerHTML=`<div class="cong"><div class="cong-h"><span class="ico">⚓</span><span class="ti">Port watch — congestion</span><span class="hint">from fleet AIS dwell + schedule drift</span></div><div class="cong-body">${rows}</div></div>`;
+}
+
+function initMap(){
+  map=L.map('map',{worldCopyJump:true,minZoom:1}).setView([22,-40],2);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    {attribution:'&copy; OpenStreetMap &copy; CARTO',subdomains:'abcd',maxZoom:19}).addTo(map);
+  markerLayer=L.layerGroup().addTo(map);
+}
+function allSailings(){
+  let out=[];
+  SVCS.forEach(s=>{const sv=DATA[s];if(!sv)return;
+    if(curSvc!=="ALL"&&curSvc!==s)return;
+    ["asiaOut","usOut"].forEach(d=>{(sv[d]||[]).forEach(x=>out.push(Object.assign({svc:s,dir:d},x)));});});
+  return out;
+}
+function renderMap(){
+  if(!map)return; markerLayer.clearLayers();
+  const seen={}; let n=0;
+  allSailings().forEach(s=>{
+    if(s.lat==null||seen[s.imo])return; seen[s.imo]=1;
+    L.circleMarker([s.lat,s.lon],{radius:6,color:"#fff",weight:1.5,fillColor:SVCCOLOR[s.svc],fillOpacity:.95})
+      .bindPopup(`<b>${s.vessel}</b> (${s.voyage})<br>${SVCNAME[s.svc]}<br>${s.pos} · AIS ${s.ais}`).addTo(markerLayer);
+    n++;
+  });
+  document.getElementById('mapcount').textContent=n+' vessels';
+}
+function aisHtml(s){
+  if(!s.ais||s.ais==="-")return "";
+  return `<span class="ais"><span class="dot ${s.st||'bad'}"></span>${s.pos} · ${s.ais}${s.spd&&s.spd!=="-"&&s.spd!==""?" · "+s.spd:""}${s.dest?" → "+s.dest:""}${s.src&&s.src!=="-"?" ["+s.src+"]":""}</span>`;
+}
+function cyLabel(cy){
+  const bad=(!cy||cy==="-"||cy===""||cy==="N/A");
+  return `<span class="cy${bad?' na':''}">CY ${bad?'N/A':cy}</span>`;
+}
+function sailHtml(s){
+  const route=(s.route||[]).map((p,i)=>{
+    const cls=i===0?"first":(i===s.route.length-1?"last":"");
+    const eta=(p.eta&&p.eta!=="-")?("ETA "+p.eta):"";
+    const etd=(p.etd&&p.etd!=="-"&&p.etd!=="")?("ETD "+p.etd):"";
+    const times=[eta,etd].filter(Boolean).join(" · ");
+    return `<li class="${cls}"><span class="pn">${p.port}</span> <span class="cd">${p.code}</span><br><span class="tm">${times}</span> ${cyLabel(p.cy)}</li>`;
+  }).join("");
+  const teu=(s.teu&&s.teu!=="N/A"&&s.teu!=="")?(s.teu+" TEU"):"TEU N/A";
+  const ck=CHANGES[s.svc+'|'+s.dir+'|'+s.voyage];
+  const cbadge=ck==='new'?'<span class="cbadge new">NEW</span>':ck==='swap'?'<span class="cbadge swap">VESSEL SWAP</span>':ck==='resched'?'<span class="cbadge upd">RESCHEDULED</span>':'';
+  const ok=OMITS[s.svc+'|'+s.dir+'|'+s.voyage];
+  const obadge=(ok&&ok.length)?'<span class="cbadge omit">⚠ OMITS '+ok.join(', ').toUpperCase()+'</span>':'';
+  var pf=PHASEMAP[s.svc+'|'+s.dir+'|'+s.voyage];
+  var pbadge=(pf&&pf.length)?'<span class="cbadge omit" style="background:#fde8ef;color:#a01457;border-color:#f0a8c4">⟳ PHASE-OUT</span>':'';
+  const hd=(s.route&&s.route[0]&&s.route[0].eta&&s.route[0].eta!=='-')?s.route[0].eta:(s.dep||'-');
+  return `<div class="sail${ck?' chgd':''}${(ok&&ok.length)?' omit-row':''}" data-imo="${s.imo}${s.voyage}">
+    <div class="sail-h">
+      <div class="sail-dep">${hd.split(' ').slice(0,2).join(' ')}<small>ETA ${hd.split(' ').slice(2).join(' ')||''}</small></div>
+      <div class="sail-v"><span class="nm">${s.vessel}</span>${cbadge}${obadge}${pbadge} <span class="vy">${s.voyage} · IMO ${s.imo} · ${teu}</span><br>${aisHtml(s)}</div>
+      <span class="chev">▾</span>
+    </div>
+    <div class="detail"><div class="cuts ch">Route &amp; CY cut-off (per load port)</div><ul class="route">${route}</ul></div>
+  </div>`;
+}
+function boardHtml(sv,svc,dir){
+  const list=(sv[dir]||[]);
+  const isAsia=dir==="asiaOut";
+  const from=isAsia?sv.asiaPort:sv.usPort, to=isAsia?sv.usPort:sv.asiaPort;
+  const body=list.length?list.map(x=>sailHtml(Object.assign({svc,dir},x))).join(""):`<div class="empty">No sailings (pending next run)</div>`;
+  return `<div class="board"><div class="board-h ${isAsia?'asia':'us'}">${isAsia?'Asia → US':'US → Asia'}<span class="small">· ${from} → ${to}</span></div>${body}</div>`;
+}
+function render(){
+  renderNotif();
+  const root=document.getElementById('boards'); root.innerHTML="";
+  SVCS.forEach(svc=>{
+    if(curSvc!=="ALL"&&curSvc!==svc)return;
+    const sv=DATA[svc]; if(!sv)return;
+    let boards="";
+    if(curDir==="ALL"||curDir==="asiaOut")boards+=boardHtml(sv,svc,"asiaOut");
+    if(curDir==="ALL"||curDir==="usOut")boards+=boardHtml(sv,svc,"usOut");
+    root.insertAdjacentHTML('beforeend',
+      `<div class="svc-block"><div class="svc-title"><span class="pill" style="background:${SVCCOLOR[svc]}">${SVCNAME[svc]}</span></div><div class="boards">${boards}</div></div>`);
+  });
+  root.querySelectorAll('.sail-h').forEach(h=>h.addEventListener('click',()=>h.parentElement.classList.toggle('open')));
+  renderMap();
+}
+function seg(id,set){document.getElementById(id).addEventListener('click',e=>{
+  if(e.target.tagName!=="BUTTON")return;[...e.currentTarget.children].forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');set(e.target.dataset);render();});}
+seg('svcSeg',d=>curSvc=d.svc); seg('dirSeg',d=>curDir=d.dir);
+
+function computeChanges(){
+  CHANGES={}; CHANGELIST=[];
+  if(!PREV||!PREV.services)return;
+  SVCS.forEach(svc=>{
+    const cs=DATA[svc], ps=PREV.services[svc]; if(!cs||!ps)return;
+    ["asiaOut","usOut"].forEach(dir=>{
+      const dl=dir==="asiaOut"?"Asia→US":"US→Asia";
+      const cur=cs[dir]||[], prev=ps[dir]||[];
+      const cb={},pb={}; cur.forEach(s=>cb[s.voyage]=s); prev.forEach(s=>pb[s.voyage]=s);
+      var DOY={Jan:0,Feb:31,Mar:59,Apr:90,May:120,Jun:151,Jul:181,Aug:212,Sep:243,Oct:273,Nov:304,Dec:334};
+      function doy(s){var m=(s||'').match(/(\d{1,2}) (\w{3})/);return m?DOY[m[2]]+(+m[1]):null;}
+      function delta(a,b){var x=doy(a),y=doy(b);if(x==null||y==null)return '';var d=y-x;if(d>0)return ' (delayed '+d+'d)';if(d<0)return ' ('+(-d)+'d earlier)';return '';}
+      cur.forEach(s=>{const p=pb[s.voyage]; const key=svc+'|'+dir+'|'+s.voyage;
+        if(!p){CHANGES[key]='new'; CHANGELIST.push({svc,dl,type:'added',vessel:s.vessel,detail:'new sailing on the board — departs '+s.dep}); return;}
+        if(p.vessel!==s.vessel){var rs={};['asiaOut','usOut'].forEach(function(dd){((((ROTATION[svc]||{})[dd])||[])).forEach(function(cp){rs[cp.c]=1;});});var pfg=(p.route||[]).filter(function(r){return r.code&&!rs[r.code]&&!/^US/.test(r.code)&&!/^PA/.test(r.code)&&!/^BS/.test(r.code);}).map(function(r){return r.port;});CHANGES[key]='swap';if(pfg.length>=2){CHANGELIST.push({svc,dl,type:'phase',vessel:s.vessel,detail:'<b style="color:#a01457">PHASE-OUT</b> '+p.vessel+' (reassigned — was routing via '+pfg.slice(0,4).join(', ')+') → <b style="color:#0a7d3c">PHASE-IN</b> '+s.vessel+' (voyage '+s.voyage+')'});}else{CHANGELIST.push({svc,dl,type:'swap',vessel:s.vessel,detail:s.vessel+' deployed in place of '+p.vessel+' (voyage '+s.voyage+')'});}return;}
+        var pmap={}; (p.route||[]).forEach(x=>pmap[x.code]=x); var diffs=[];
+        function dayOf(s){var m=(s||'').match(/(\d{1,2} \w{3})/);return m?m[1]:'';}
+        (s.route||[]).forEach(x=>{var pp=pmap[x.code]; if(!pp)return;
+          if(x.etd&&x.etd!==''&&pp.etd&&pp.etd!==''&&dayOf(x.etd)!==dayOf(pp.etd))diffs.push('<span class="pchg">'+x.port+'</span> ETD <span class="oldv">'+pp.etd+'</span> → <span class="newv">'+x.etd+'</span><span class="dlt">'+delta(pp.etd,x.etd)+'</span>');
+          else if(x.eta&&x.eta!=='-'&&pp.eta&&pp.eta!=='-'&&dayOf(x.eta)!==dayOf(pp.eta))diffs.push('<span class="pchg">'+x.port+'</span> ETA <span class="oldv">'+pp.eta+'</span> → <span class="newv">'+x.eta+'</span><span class="dlt">'+delta(pp.eta,x.eta)+'</span>');
+        });
+        if(diffs.length){CHANGES[key]='resched'; CHANGELIST.push({svc,dl,type:'resched',vessel:s.vessel,detail:diffs.join('; ')});}
+      });
+      prev.forEach(s=>{if(!cb[s.voyage])CHANGELIST.push({svc,dl,type:'removed',vessel:s.vessel,detail:'dropped from board (was '+s.dep+')'});});
+    });
+  });
+}
+function renderNotif(){
+  const el=document.getElementById('notif');
+  const curDate=toHKT(SNAPSHOT||"").split("—")[0].trim();const scope=curSvc==="ALL"?"":" for "+SVCNAME[curSvc];
+  const omitList=OMITLIST.filter(o=>curSvc==="ALL"||o.svc===curSvc);
+  const omitRows=omitList.map(o=>`<div class="chg"><span class="tag omit">omits</span><span class="svc">${SVCNAME[o.svc]} · ${o.dl}</span><span class="txt"><span class="vn">${o.vessel}</span> — skips <b>${o.ports.join(', ')}</b> <span style="color:var(--muted)">(${o.voyage})</span></span></div>`).join('');const phaseList=PHASEOUT.filter(o=>curSvc==="ALL"||o.svc===curSvc);const phaseRows=phaseList.map(o=>`<div class="chg"><span class="tag omit" style="background:#fde8ef;color:#a01457">phase-out</span><span class="svc">${SVCNAME[o.svc]} · ${o.dl}</span><span class="txt"><span class="vn">${o.vessel}</span> — phasing out (reassigned to another rotation), now routing via <b>${o.via.slice(0,4).join(', ')}</b>${o.dest?' → '+o.dest:''} <span style="color:var(--muted)">(${o.voyage})</span></span></div>`).join('');
+  if(!PREV){
+    const n=omitList.length+phaseList.length;
+    const body=(phaseRows+omitRows)||`<div class="chg"><span class="txt" style="color:var(--muted)">No port omissions detected${scope}. First snapshot saved — schedule changes appear from the next update.</span></div>`;
+    el.innerHTML=`<div class="notif${notifOpen?' open':''}"><div class="notif-h"><span class="bell">🔔</span><span class="ti">Port omissions &amp; changes${scope}</span><span class="cnt ${n?'':'zero'}">${n||'baseline'}</span><span class="since">as of ${curDate} · first snapshot</span><span class="chev">▾</span></div><div class="notif-body">${body}</div></div>`;
+    el.querySelector('.notif-h').addEventListener('click',()=>{notifOpen=!notifOpen;el.querySelector('.notif').classList.toggle('open');});
+    return;
+  }
+  const since=toHKT((PREV.updated||'previous')).split('—')[0].trim();
+  const order={phase:-1,added:0,swap:1,resched:2,removed:3};
+  const list=CHANGELIST.filter(c=>curSvc==="ALL"||c.svc===curSvc).slice().sort((a,b)=>order[a.type]-order[b.type]);
+  const n=list.length+omitList.length+phaseList.length;
+  const chgRows=list.map(c=>`<div class="chg"><span class="tag ${c.type}">${c.type}</span><span class="svc">${SVCNAME[c.svc]} · ${c.dl}</span><span class="txt"><span class="vn">${c.vessel}</span> — ${c.detail}</span></div>`).join('');
+  const rows=(phaseRows+omitRows+chgRows)||`<div class="chg"><span class="txt" style="color:var(--muted)">No omissions or schedule changes${scope} since the previous update.</span></div>`;
+  el.innerHTML=`<div class="notif${notifOpen?' open':''}"><div class="notif-h"><span class="bell">🔔</span><span class="ti">Port omissions &amp; changes${scope}</span><span class="cnt ${n?'':'zero'}">${n}</span><span class="since">as of ${curDate} · vs ${since}</span><span class="chev">▾</span></div><div class="notif-body">${rows}</div></div>`;
+  el.querySelector('.notif-h').addEventListener('click',()=>{notifOpen=!notifOpen;el.querySelector('.notif').classList.toggle('open');});
+}
+let MKT=null, mAlliance='ZIM+MSC', mAsia='ALL', mUs='ALL', mSel=null;
+const ALORDER=["ZIM+MSC","Gemini","Ocean Alliance","Premier Alliance"];const ALCOLOR={"ZIM+MSC":"#0b3d5c","Gemini":"#1f6fb2","Ocean Alliance":"#2e7d4f","Premier Alliance":"#7a4ea3"};const alKeys=()=>{var k=Object.keys((MKT&&MKT.alliances)||{});return ALORDER.filter(a=>k.indexOf(a)>=0).concat(k.filter(a=>ALORDER.indexOf(a)<0));};
+function isoWeekOf(dt){var d=new Date(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth(),dt.getUTCDate()));var dy=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-dy+3);var w1=new Date(Date.UTC(d.getUTCFullYear(),0,4));return 1+Math.round(((d-w1)/864e5-3+((w1.getUTCDay()+6)%7))/7);}
+const MWEEKS=(function(){var a=[],t=Date.now();for(var i=0;i<8;i++)a.push(isoWeekOf(new Date(t+i*604800000)));return a;})();
+function curAll(){
+  if(!MKT||!MKT.alliances)return null;
+  if(mAlliance==='ALL'){
+    var svcs=[],aset={},uset={};
+    alKeys().forEach(function(an){var A=MKT.alliances[an];(A.services||[]).forEach(function(s){var c=Object.assign({},s);c._al=an;svcs.push(c);});(A.asiaPorts||[]).forEach(function(p){aset[p]=1;});(A.usPorts||[]).forEach(function(p){uset[p]=1;});});
+    return {services:svcs, asiaPorts:Object.keys(aset).sort(), usPorts:Object.keys(uset).sort(), pendingAsia:[], _merged:true};
+  }
+  return MKT.alliances[mAlliance];
+}
+const PGRP={"New York":"New York / Newark","Newark":"New York / Newark","Vung Tau":"Vung Tau / Cai Mep","Cai Mep":"Vung Tau / Cai Mep","Miami":"Miami / Port Everglades","Port Everglades":"Miami / Port Everglades"};const pn=p=>PGRP[p]||p;const vteu=x=>(x&&(x.teu||(MKT&&MKT.vesselTeu&&MKT.vesselTeu[x.vessel])))||0;
+function mkActivePort(s){ if(mAsia!=='ALL'){var kk=Object.keys(s.ports).filter(k=>pn(k)===mAsia||k===mAsia);return kk.length?kk[0]:null;} var k=Object.keys(s.ports); return k.length?k.reduce(function(b,c){return Math.max.apply(null,s.ports[c].map(function(x){return x.week}))>Math.max.apply(null,s.ports[b].map(function(x){return x.week}))?c:b;},k[0]):null; }
+function renderMarket(){
+  const el=document.getElementById('market'); if(!el)return;
+  const A=curAll(); if(!MKT||!A){el.innerHTML='';return;}
+  const carrier=mAlliance==='Gemini'?'Maersk':(mAlliance==='ALL'?'Maersk + CMA CGM':'CMA CGM');
+  const alBtns=`<button data-al="ALL" class="${mAlliance==='ALL'?'active':''}">All alliances</button>`+alKeys().map(a=>`<button data-al="${a}" class="${mAlliance===a?'active':''}" style="border-left:4px solid ${ALCOLOR[a]||'#bbb'}${mAlliance===a?';background:'+(ALCOLOR[a]||'#333')+';color:#fff;border-color:'+(ALCOLOR[a]||'#333'):''}">${a}</button>`).join('')+(MKT.stubAlliances||[]).map(a=>`<button disabled title="not yet captured">${a}</button>`).join('');
+  const aPorts=[...new Set((A.asiaPorts||[]).map(pn))];const aBtns=`<button data-a="ALL" class="${mAsia==='ALL'?'active':''}">All Asia</button>`+aPorts.map(p=>`<button data-a="${p}" class="${mAsia===p?'active':''}">${p}</button>`).join('');
+  const uPorts=[...new Set((A.usPorts||[]).map(pn))];const uBtns=`<button data-u="ALL" class="${mUs==='ALL'?'active':''}">All US</button>`+uPorts.map(p=>`<button data-u="${p}" class="${mUs===p?'active':''}">${p}</button>`).join('');
+  const svcs=A.services.filter(s=>(mAsia==='ALL'?Object.keys(s.ports).length>0:!!mkActivePort(s))&&(mUs==='ALL'||s.us.some(u=>pn(u)===mUs||u===mUs)));
+  const head=`<tr><th class="lane">Service (weekly TEU)</th>${MWEEKS.map(w=>`<th>W${w}</th>`).join('')}</tr>`;
+  const rows=svcs.length?svcs.map((s,si)=>{
+    const ap=mkActivePort(s); const list=ap?(s.ports[ap]||[]):[];
+    const cells=MWEEKS.map(w=>{
+      const ss=list.filter(x=>x.week===w);
+      if(!ss.length)return `<td class="empty2">·</td>`;
+      return `<td>`+ss.map(x=>`<div class="mcell${mSel===si+'_'+x.voy?' sel':''}" data-id="${si}_${x.voy}"><span class="vshort">${x.vessel}</span><span class="arr">ETA ${x.etd}</span><span class="cyv">CY ${x.cy}</span>${vteu(x)?`<span class="cyv" style="color:var(--teal)">${vteu(x).toLocaleString()} TEU</span>`:''}</div>`).join('')+`</td>`;
+    }).join('');
+    const teu=s.teu?s.teu.toLocaleString()+' TEU/wk':'TEU n/a';
+    const tr=(s.transit&&ap&&s.transit[ap])?('Transit from '+ap+': '+s.us.filter(u=>s.transit[ap][u]!=null).map(u=>(mUs!=='ALL'&&(pn(u)===mUs||u===mUs)?'<b>'+u+' '+s.transit[ap][u]+'d</b>':u+' '+s.transit[ap][u]+'d')).join(' · ')):'';
+    const alTag=s._al?`<span class="pill" style="background:${ALCOLOR[s._al]||'var(--navy)'};color:#fff;font-size:9px;margin-right:5px">${s._al}</span>`:'';
+    return `<tr><td class="lane">${alTag}${s.svc}<span class="svc2">${teu} · US: ${s.us.join(', ')}</span><span class="svc2">Asia ETA @ <b style="color:var(--asia)">${ap||'—'}</b></span>${tr?`<span class="svc2" style="color:var(--teal)">${tr}</span>`:''}</td>${cells}</tr>`;
+  }).join(''):`<tr><td class="empty2" colspan="9">No ${mAlliance} service for this Asia / US combination yet.</td></tr>`;
+  var totW=w=>svcs.reduce((sm,s)=>{var ap=mkActivePort(s);var lst=ap?(s.ports[ap]||[]):[];return sm+lst.filter(x=>x.week===w).reduce((a,x)=>a+vteu(x),0);},0);var grand=MWEEKS.reduce((a,w)=>a+totW(w),0);var totRow='<tr style="font-weight:700;background:#eef3fb"><td class="lane">Weekly capacity (TEU)<span class="svc2">Sum shown = '+grand.toLocaleString()+' TEU</span></td>'+MWEEKS.map(w=>{var t=totW(w);return '<td>'+(t?t.toLocaleString():String.fromCharCode(183))+'</td>';}).join('')+'</tr>';el.innerHTML=`<div class="mkt">
+    <div class="mkt-h"><span class="ti">Market Profile — competitor weekly outlook</span><span class="pill">${mAlliance} · live</span></div><div class="sub2">Direct CY-CY sailings by ISO week — ${MKT.updated}. Pick an <b>alliance</b>, then an <b>Asia port</b> (and optionally a <b>US port</b>); each weekly cell shows the vessel and its <b>ETA at that Asia port</b> plus the <b>CY gate-in</b>. Direct only — no transshipment. Click a cell for detail.</div>
+    <div class="mkt-filt">
+      <div><div class="lbl">Alliance</div><div class="seg" id="mAl">${alBtns}</div></div>
+      <div><div class="lbl">Asia port — ETA shown</div><div class="seg" id="mAsia">${aBtns}</div></div>
+      <div><div class="lbl">US port</div><div class="seg" id="mUs">${uBtns}</div></div>
+    </div>
+    <div class="mkt-scroll"><table class="mgrid"><thead>${head}</thead><tbody>${rows}${totRow}</tbody></table></div>
+    <div class="mdetail${mSel?' show':''}" id="mDetail"></div>
+    <div class="mstub"><b>${mAlliance}</b> via ${carrier}, direct CY-CY. Asia ports with live ETA: <b>${(A.asiaPorts||[]).join(', ')||'—'}</b>. Still to capture: ${(A.pendingAsia||[]).join(', ')||'—'}. Remaining alliances: ${(MKT.stubAlliances||[]).join(' / ')}.</div>
+  </div>`;
+  el.querySelector('#mAl').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON'||e.target.disabled||!e.target.dataset.al)return;mAlliance=e.target.dataset.al;mAsia='ALL';mUs='ALL';mSel=null;renderMarket();});
+  el.querySelector('#mAsia').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')return;mAsia=e.target.dataset.a;mSel=null;renderMarket();});
+  el.querySelector('#mUs').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')return;mUs=e.target.dataset.u;mSel=null;renderMarket();});
+  el.querySelectorAll('.mcell[data-id]').forEach(c=>c.addEventListener('click',()=>showMktDetail(c.dataset.id)));
+  if(mSel)showMktDetail(mSel);
+}
+function showMktDetail(id){
+  mSel=id; var parts=id.split('_'); var si=+parts[0], voy=parts[1];
+  var A=curAll(); if(!A)return;
+  var svcs=A.services.filter(s=>(mAsia==='ALL'?Object.keys(s.ports).length>0:!!mkActivePort(s))&&(mUs==='ALL'||s.us.some(u=>pn(u)===mUs||u===mUs)));
+  var s=svcs[si]; if(!s)return; var ap=mkActivePort(s);
+  var rec=(s.ports[ap]||[]).find(x=>x.voy===voy); if(!rec)return;
+  var d=document.getElementById('mDetail'); if(!d)return;
+  d.className='mdetail show';
+  var teu=s.teu?s.teu.toLocaleString()+' TEU/wk':'TEU n/a';
+  d.innerHTML='<div class="cuts ch">'+rec.vessel+' '+rec.voy+' &middot; '+s.svc+'</div><ul class="route"><li class="first"><span class="pn">'+ap+'</span> <span class="cd">Asia load</span><br><span class="tm">ETA '+rec.etd+' &middot; CY gate-in '+rec.cy+'</span></li><li class="last"><span class="pn">US ports: '+s.us.join(' / ')+'</span><br><span class="tm">'+teu+' &middot; direct CY-CY</span></li></ul>';
+  document.querySelectorAll('.mcell').forEach(c=>c.classList.toggle('sel',c.dataset.id===id));
+}
+function toHKT(s){
+  if(!s)return s;
+  var m=s.match(/^(\d{1,2}) (\w{3}) (\d{4}),\s*(\d{1,2}):(\d{2})\s*UTC(.*)$/);
+  if(!m)return s;
+  var MN={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  var d=new Date(Date.UTC(+m[3],MN[m[2]],+m[1],+m[4],+m[5])+0);d=new Date(d.getTime()+8*3600*1000);
+  var MM=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];function p2(x){return (x<10?'0':'')+x;}
+  return d.getUTCDate()+' '+MM[d.getUTCMonth()]+' '+d.getUTCFullYear()+', '+p2(d.getUTCHours())+':'+p2(d.getUTCMinutes())+' HKT'+(m[6]||'');
+}
+async function boot(){
+  initMap();
+  try{const r=await fetch('data.json?cb='+Date.now());const j=await r.json();
+    DATA=j.services||{};SNAPSHOT=j.updated||'';document.getElementById('updated').textContent=toHKT(j.updated)||'unknown';}
+  catch(e){document.getElementById('updated').textContent='could not load data.json';DATA={};}
+  try{const rp=await fetch('data_prev.json?cb='+Date.now());if(rp.ok)PREV=await rp.json();}catch(e){PREV=null;}
+  try{const rm=await fetch('market.json?cb='+Date.now());if(rm.ok)MKT=await rm.json();}catch(e){MKT=null;}
+  renderMarket();
+  computeChanges();
+  computeOmissions();
+  computeCongestion();
+  renderCongestion();
+  renderNotif();
+  render();
+}
+boot();
+</script>
+<script>
+(function(){
+function mkNotif(){
+Promise.all([fetch('market.json?z='+Date.now()).then(function(r){return r.json();}),fetch('market_prev.json?z='+Date.now()).then(function(r){return r.json();}).catch(function(){return null;})]).then(function(res){
+var cur=res[0],prev=res[1];if(!cur||!prev)return;
+var MO={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+function dt(s){var p=(s||'').split(' ');var d=parseInt(p[0],10);var mo=MO[p[1]];return (mo!=null&&d)?new Date(2026,mo,d):null;}
+var cw=cur.weeks||[],pw=prev.weeks||[];var wset={};cw.forEach(function(w){if(pw.indexOf(w)>=0)wset[w]=1;});
+function snap(mj){var o={};for(var al in mj.alliances){(mj.alliances[al].services||[]).forEach(function(s){var svc=s.svc||s.name;var ports=s.ports||{};for(var p in ports){ports[p].forEach(function(c){if(!wset[c.week])return;o[al+'|'+svc+'|'+p+'|'+c.week]={al:al,svc:svc,port:p,week:c.week,vessel:c.vessel,etd:c.etd,teu:(mj.vesselTeu||{})[c.vessel]||''};});}});}return o;}
+var A=snap(prev),B=snap(cur),keys={};Object.keys(A).forEach(function(k){keys[k]=1;});Object.keys(B).forEach(function(k){keys[k]=1;});
+var ch=[];Object.keys(keys).forEach(function(k){var a=A[k],b=B[k];
+if(a&&!b)ch.push({t:'removed',lbl:'Removed',r:a,d:'<span class="vn">'+a.vessel+'</span> removed ('+a.etd+')'});
+else if(b&&!a)ch.push({t:'added',lbl:'Added',r:b,d:'<span class="vn">'+b.vessel+'</span> added ('+b.etd+')'+(b.teu?' · '+Number(b.teu).toLocaleString()+' TEU':'')});
+else if(a&&b){
+if(a.vessel!==b.vessel)ch.push({t:'swap',lbl:'Vessel',r:b,d:'<span class="oldv">'+a.vessel+'</span> → <span class="newv">'+b.vessel+'</span>'});
+if(String(a.teu)!==String(b.teu))ch.push({t:'resched',lbl:'Capacity',r:b,d:'<span class="oldv">'+(a.teu?Number(a.teu).toLocaleString():'-')+'</span> → <span class="newv">'+(b.teu?Number(b.teu).toLocaleString():'-')+'</span> TEU'});
+var pa=dt(a.etd),pb=dt(b.etd);if(pa&&pb&&Math.abs((pb-pa)/864e5)>=1)ch.push({t:'resched',lbl:'Schedule',r:b,d:'<span class="oldv">'+a.etd+'</span> → <span class="newv">'+b.etd+'</span>'});
+}});
+var ord={removed:0,added:1,swap:2,resched:3};
+ch.sort(function(x,y){return (x.r.al+x.r.svc).localeCompare(y.r.al+y.r.svc)||(x.r.week-y.r.week)||(ord[x.t]-ord[y.t]);});
+var host=document.getElementById('market');if(!host)return;var old=document.getElementById('marketNotif');if(old)old.remove();
+var up=(cur.updated||'').split('|')[0].trim();var n=ch.length;
+var rows=n?ch.map(function(x){return '<div class="chg"><span class="tag '+x.t+'">'+x.lbl+'</span><span class="svc">'+x.r.al+' · '+x.r.svc+'</span><span class="txt">W'+x.r.week+' · '+x.r.port+' — '+x.d+'</span></div>';}).join(''):'<div class="chg"><span class="txt" style="color:var(--muted)">No competitor market changes since the previous update.</span></div>';
+var box=document.createElement('div');box.id='marketNotif';box.style.margin='0 0 16px';
+box.innerHTML='<div class="notif'+(window.__mktOpen?' open':'')+'"><div class="notif-h"><span class="bell">📊</span><span class="ti">Market changes — competitor profile</span><span class="cnt '+(n?'':'zero')+'">'+(n||'none')+'</span><span class="since">as of '+up+' · vs previous day</span><span class="chev">▾</span></div><div class="notif-body">'+rows+'</div></div>';
+host.parentNode.insertBefore(box,host);
+box.querySelector('.notif-h').addEventListener('click',function(){window.__mktOpen=!window.__mktOpen;box.querySelector('.notif').classList.toggle('open');});
+}).catch(function(){});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(mkNotif,900);});else setTimeout(mkNotif,900);
+})();
+</script>
+</body>
+</html>

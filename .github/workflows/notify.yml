@@ -1,0 +1,42 @@
+name: Email schedule changes
+on:
+  push:
+    branches: [main]
+    paths: ['data.json']
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'test = email the Empire recipient only; live = email all managers the real changes'
+        type: choice
+        options: [test, live]
+        default: test
+      service:
+        description: 'restrict live send to one service (all = every service)'
+        type: choice
+        options: [all, EM, AM, LS]
+        default: all
+permissions:
+  contents: read
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Send change email
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_FROM: ${{ secrets.MAIL_FROM }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          NOTIFY_RECIPIENTS: ${{ secrets.NOTIFY_RECIPIENTS }}
+          TEST_SEND: ${{ (github.event_name == 'workflow_dispatch' && inputs.mode != 'live') && '1' || '' }}
+          SVC_FILTER: ${{ github.event_name == 'workflow_dispatch' && inputs.service != 'all' && inputs.service || '' }}
+        run: python notify.py

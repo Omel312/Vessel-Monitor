@@ -1,0 +1,36 @@
+name: Update MSC tracker data
+
+# NOTE: the daily schedule is intentionally DISABLED.
+# MSC's site returns 403 Forbidden to GitHub's datacenter IPs, so a cloud cron
+# cannot fetch fresh data. This job is kept only for manual runs and will only
+# produce real data if pointed at a non-blocked data source (e.g. a licensed
+# sailing-schedule API) or run from a residential IP.
+on:
+  workflow_dispatch:        # manual run only (Actions tab -> Run workflow)
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch latest schedule + AIS
+        run: python scrape.py
+
+      - name: Commit updated data.json
+        run: |
+          git config user.name  "msc-tracker-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add data.json
+          git commit -m "Daily data refresh ($(date -u '+%Y-%m-%d %H:%M UTC'))" || echo "No changes"
+          git push
