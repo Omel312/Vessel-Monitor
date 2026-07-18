@@ -540,6 +540,7 @@ function renderMarket(){
   el.querySelector('#mUs').addEventListener('click',e=>{if(e.target.tagName!=='BUTTON')return;mUs=e.target.dataset.u;mSel=null;renderMarket();});
   el.querySelectorAll('.mcell[data-id]').forEach(c=>c.addEventListener('click',()=>showMktDetail(c.dataset.id)));
   if(mSel)showMktDetail(mSel);
+  if(window.renderMktNotif)window.renderMktNotif();
 }
 function showMktDetail(id){
   mSel=id; var parts=id.split('_'); var si=+parts[0], voy=parts[1];
@@ -587,7 +588,7 @@ var cur=res[0],prev=res[1];if(!cur||!prev)return;
 var MO={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
 function dt(s){var p=(s||'').split(' ');var d=parseInt(p[0],10);var mo=MO[p[1]];return (mo!=null&&d)?new Date(2026,mo,d):null;}
 var cw=cur.weeks||[],pw=prev.weeks||[];var wset={};cw.forEach(function(w){if(pw.indexOf(w)>=0)wset[w]=1;});
-function snap(mj){var o={};for(var al in mj.alliances){(mj.alliances[al].services||[]).forEach(function(s){var svc=s.svc||s.name;var ports=s.ports||{};for(var p in ports){ports[p].forEach(function(c){if(!wset[c.week])return;o[al+'|'+svc+'|'+p+'|'+c.week]={al:al,svc:svc,port:p,week:c.week,vessel:c.vessel,etd:c.etd,teu:(mj.vesselTeu||{})[c.vessel]||''};});}});}return o;}
+function snap(mj){var o={};for(var al in mj.alliances){(mj.alliances[al].services||[]).forEach(function(s){var svc=s.svc||s.name;var ports=s.ports||{};for(var p in ports){ports[p].forEach(function(c){if(!wset[c.week])return;o[al+'|'+svc+'|'+p+'|'+c.week]={al:al,svc:svc,us:(s.us||[]),port:p,week:c.week,vessel:c.vessel,etd:c.etd,teu:(mj.vesselTeu||{})[c.vessel]||''};});}});}return o;}
 var A=snap(prev),B=snap(cur),keys={};Object.keys(A).forEach(function(k){keys[k]=1;});Object.keys(B).forEach(function(k){keys[k]=1;});
 var ch=[];Object.keys(keys).forEach(function(k){var a=A[k],b=B[k];
 if(a&&!b)ch.push({t:'removed',lbl:'Removed',r:a,d:'<span class="vn">'+a.vessel+'</span> removed ('+a.etd+')'});
@@ -599,13 +600,31 @@ var pa=dt(a.etd),pb=dt(b.etd);if(pa&&pb&&Math.abs((pb-pa)/864e5)>=1)ch.push({t:'
 }});
 var ord={removed:0,added:1,swap:2,resched:3};
 ch.sort(function(x,y){return (x.r.al+x.r.svc).localeCompare(y.r.al+y.r.svc)||(x.r.week-y.r.week)||(ord[x.t]-ord[y.t]);});
-var host=document.getElementById('market');if(!host)return;var old=document.getElementById('marketNotif');if(old)old.remove();
-var up=(cur.updated||'').split('|')[0].trim();var n=ch.length;
-var rows=n?ch.map(function(x){return '<div class="chg"><span class="tag '+x.t+'">'+x.lbl+'</span><span class="svc">'+x.r.al+' · '+x.r.svc+'</span><span class="txt">W'+x.r.week+' · '+x.r.port+' — '+x.d+'</span></div>';}).join(''):'<div class="chg"><span class="txt" style="color:var(--muted)">No competitor market changes since the previous update.</span></div>';
+var up=(cur.updated||'').split('|')[0].trim();
+window.__mktCh=ch;
+window.renderMktNotif=function(){
+var host=document.getElementById('market');if(!host)return;
+var al=(typeof mAlliance!=='undefined')?mAlliance:'ALL';
+var as=(typeof mAsia!=='undefined')?mAsia:'ALL';
+var uss=(typeof mUs!=='undefined')?mUs:'ALL';
+var GRP={'New York':'New York / Newark','Newark':'New York / Newark','Vung Tau':'Vung Tau / Cai Mep','Cai Mep':'Vung Tau / Cai Mep','Miami':'Miami / Port Everglades','Port Everglades':'Miami / Port Everglades'};
+var g=function(p){return GRP[p]||p;};
+var f=(window.__mktCh||[]).filter(function(x){
+if(al!=='ALL'&&x.r.al!==al)return false;
+if(as!=='ALL'&&g(x.r.port)!==as&&x.r.port!==as)return false;
+if(uss!=='ALL'&&!(x.r.us||[]).some(function(u){return g(u)===uss||u===uss;}))return false;
+return true;});
+var old=document.getElementById('marketNotif');if(old)old.remove();
+var n=f.length;
+var flt=[];if(al!=='ALL')flt.push(al);if(as!=='ALL')flt.push(as);if(uss!=='ALL')flt.push('\u2192 '+uss);
+var fl=flt.length?' \u00b7 filter: '+flt.join(' \u00b7 '):'';
+var rows=n?f.map(function(x){return '<div class="chg"><span class="tag '+x.t+'">'+x.lbl+'</span><span class="svc">'+x.r.al+' \u00b7 '+x.r.svc+'</span><span class="txt">W'+x.r.week+' \u00b7 '+x.r.port+' \u2014 '+x.d+'</span></div>';}).join(''):'<div class="chg"><span class="txt" style="color:var(--muted)">No competitor market changes'+(flt.length?' for this selection':'')+' since the previous update.</span></div>';
 var box=document.createElement('div');box.id='marketNotif';box.style.margin='0 0 16px';
-box.innerHTML='<div class="notif'+(window.__mktOpen?' open':'')+'"><div class="notif-h"><span class="bell">📊</span><span class="ti">Market changes — competitor profile</span><span class="cnt '+(n?'':'zero')+'">'+(n||'none')+'</span><span class="since">as of '+up+' · vs previous day</span><span class="chev">▾</span></div><div class="notif-body">'+rows+'</div></div>';
+box.innerHTML='<div class="notif'+(window.__mktOpen?' open':'')+'"><div class="notif-h"><span class="bell">\ud83d\udcca</span><span class="ti">Market changes \u2014 competitor profile</span><span class="cnt '+(n?'':'zero')+'">'+(n||'none')+'</span><span class="since">as of '+up+' \u00b7 vs previous day'+fl+'</span><span class="chev">\u25be</span></div><div class="notif-body">'+rows+'</div></div>';
 host.parentNode.insertBefore(box,host);
 box.querySelector('.notif-h').addEventListener('click',function(){window.__mktOpen=!window.__mktOpen;box.querySelector('.notif').classList.toggle('open');});
+};
+window.renderMktNotif();
 }).catch(function(){});}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(mkNotif,900);});else setTimeout(mkNotif,900);
 })();
