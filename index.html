@@ -391,7 +391,8 @@ function renderMap(){
 // ZSL=Lone Star, ZNP=Chinook), as day-offsets from each direction day-0 port,
 // anchored on a clean on-proforma reference voyage. Slots step +7d per voyage
 // number; vessels without a series voyage no. snap to the nearest weekly slot;
-// Chinook US>Asia (mixed B/R numbering) snaps each port to its proforma weekday.
+// The proforma grid is FIXED: slots roll +7d per voyage number week after week,
+// independent of actual vessel deployment (delays >1 week show as-is).
 const PF={
 EM:{asiaOut:{rx:/^GE(\d+)E$/,n0:637,e0:Date.UTC(2026,8,7),off:{CNSHA:0,CNNGB:3,KRPUS:6,USNYC:35,USBAL:38,USORF:41,USPEF:44,PAROD:49}},
 usOut:{rx:/^GE(\d+)W$/,n0:637,e0:Date.UTC(2026,8,7),off:{USNYC:0,USBAL:3,USORF:6,USPEF:9,PAROD:14,CNSHA:42,CNNGB:45,KRPUS:48}}},
@@ -400,7 +401,7 @@ usOut:{rx:/^GU(\d+)E$/,n0:637,e0:Date.UTC(2026,8,6),off:{USNYC:0,USBAL:3,USORF:6
 LS:{asiaOut:{rx:/^GN(\d+)E$/,n0:636,e0:Date.UTC(2026,8,4),off:{VNVUT:0,CNYTN:5,CNNGB:8,CNSHA:11,KRPUS:13,USHOU:39}},
 usOut:{rx:/^GN(\d+)W$/,n0:637,e0:Date.UTC(2026,8,8),off:{USHOU:0,USMOB:5,USTPA:8,USMIA:11,DOCAU:14,SGSIN:49,VNVUT:52}}},
 CH:{asiaOut:{rx:/^UK(\d+)[A-Z]$/,n0:635,e0:Date.UTC(2026,7,29),off:{CNYTN:0,CNNGB:3,CNSHA:7,CNTAO:9,KRPUS:12,USSEA:23}},
-usOut:{snap:1,e0:Date.UTC(2026,7,31),off:{USSEA:0,CAVAN:3,CAPRR:12,KRPUS:28,CNYTN:33}}}
+usOut:{rx:/^UK(\d+)[A-Z]$/,n0:637,e0:Date.UTC(2026,8,7),off:{USSEA:0,CAVAN:3,CAPRR:12,KRPUS:28,CNYTN:33}}}
 };
 const PFMN={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
 const PFMM=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -429,8 +430,7 @@ if(m)wk=(+m[1])-cfg.n0;
 function snapWk(){for(var i=0;i<route.length;i++){var off=cfg.off[route[i].code];if(off==null)continue;
 var t=pfTime(route[i].eta&&route[i].eta!=="-"?route[i].eta:route[i].etd); if(t==null)continue;
 return Math.round((t-(cfg.e0+off*PFDY))/PFWK);}return null;}
-if(wk==null)wk=snapWk();
-else{var s0=snapWk(); if(s0!=null&&Math.abs(s0-wk)>6)wk=s0;}
+if(wk==null)wk=snapWk(); // only for voyages with no series number (86E/81E/62E); series voyages ALWAYS use the fixed weekly chain, however late the vessel runs
 if(wk==null)return null;
 var used={};
 route.forEach(function(p,i){var off=cfg.off[p.code]; if(off==null||used[p.code])return; used[p.code]=1;
