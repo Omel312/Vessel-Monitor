@@ -66,6 +66,12 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,Bl
 .route .tm{font-size:11px;color:var(--muted);}
 .route .cy{display:inline-block;margin-top:2px;font-size:10.5px;font-weight:700;color:var(--asia);background:#eef6fb;border-radius:4px;padding:1px 6px;}
 .route .cy.na{color:#9fb3bd;background:#f3f6f8;font-weight:600;}
+.pf{display:inline-block;margin-top:3px;font-size:10.5px;font-weight:700;color:#5b4ea0;background:#f0eefb;border-radius:4px;padding:1px 6px;}
+.pfd{font-weight:800;font-size:10.5px;margin-left:4px;}
+.pfd.late{color:var(--red);}
+.pfd.early{color:var(--green);}
+.pfd.on{color:var(--green);}
+.sail-dep .pfh{display:block;font-weight:800;color:#5b4ea0;font-size:9.5px;margin-top:2px;}
 .cuts{margin-top:8px;}
 .cuts .ch{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:6px;}
 .cuts table{width:100%;border-collapse:collapse;font-size:12px;}
@@ -196,7 +202,7 @@ td.empty2{color:#c3ccd6;text-align:center;}
   <div id="market"></div>
 
   <div class="note">
-    <b>How to read this.</b> Each service shows two boards: <b>Asia → US</b> and <b>US → Asia</b>, built from the <b>last regional port</b> 7 weeks ahead, so vessels already working the region appear first (furthest advanced at the top). Each card shows vessel, voyage, IMO and capacity (<b>TEU</b>). Click a sailing for its <b>full port-by-port route</b> with ETA / ETD and the <b>CY cut-off at each load port</b> (N/A where MSC publishes none). Positions and last AIS come from VesselFinder (ocean-basin precision). Roster is rebuilt from MSC's live schedule.
+    <b>How to read this.</b> Each service shows two boards: <b>Asia → US</b> and <b>US → Asia</b>, built from the <b>last regional port</b> 7 weeks ahead, so vessels already working the region appear first (furthest advanced at the top). Each card shows vessel, voyage, IMO and capacity (<b>TEU</b>). Click a sailing for its <b>full port-by-port route</b> with ETA / ETD and the <b>CY cut-off at each load port</b> (N/A where MSC publishes none). Positions and last AIS come from VesselFinder (ocean-basin precision). Roster is rebuilt from MSC's live schedule. <b>PF</b> = proforma call date per the ZIM fixed-day line schedule (ZNS = Empire, Z7S = America, ZSL = Lone Star, ZNP = Chinook): the purple chip under each ETA is the proforma date, the badge is actual vs proforma in days.
   </div>
 </div>
 
@@ -380,6 +386,65 @@ function renderMap(){
   });
   document.getElementById('mapcount').textContent=n+' vessels';
 }
+// ---- ZIM proforma overlay ----------------------------------------------
+// Fixed weekly call days from ZIM line schedules (ZNS=Empire, Z7S=America,
+// ZSL=Lone Star, ZNP=Chinook), as day-offsets from each direction day-0 port,
+// anchored on a clean on-proforma reference voyage. Slots step +7d per voyage
+// number; vessels without a series voyage no. snap to the nearest weekly slot;
+// Chinook US>Asia (mixed B/R numbering) snaps each port to its proforma weekday.
+const PF={
+EM:{asiaOut:{rx:/^GE(\d+)E$/,n0:637,e0:Date.UTC(2026,8,7),off:{CNSHA:0,CNNGB:3,KRPUS:6,USNYC:35,USBAL:38,USORF:41,USPEF:44,PAROD:49}},
+usOut:{rx:/^GE(\d+)W$/,n0:637,e0:Date.UTC(2026,8,7),off:{USNYC:0,USBAL:3,USORF:6,USPEF:9,PAROD:14,CNSHA:42,CNNGB:45,KRPUS:48}}},
+AM:{asiaOut:{rx:/^GU(\d+)W$/,n0:634,e0:Date.UTC(2026,7,20),off:{THLCH:0,CNYTN:6,VNHPH:9,VNVUT:11,SGSIN:14,USNYC:45}},
+usOut:{rx:/^GU(\d+)E$/,n0:637,e0:Date.UTC(2026,8,6),off:{USNYC:0,USBAL:3,USORF:6,INTRV:37,SGSIN:42,THLCH:46}}},
+LS:{asiaOut:{rx:/^GN(\d+)E$/,n0:636,e0:Date.UTC(2026,8,4),off:{VNVUT:0,CNYTN:5,CNNGB:8,CNSHA:11,KRPUS:13,USHOU:39}},
+usOut:{rx:/^GN(\d+)W$/,n0:637,e0:Date.UTC(2026,8,8),off:{USHOU:0,USMOB:5,USTPA:8,USMIA:11,DOCAU:14,SGSIN:49,VNVUT:52}}},
+CH:{asiaOut:{rx:/^UK(\d+)[A-Z]$/,n0:635,e0:Date.UTC(2026,7,29),off:{CNYTN:0,CNNGB:3,CNSHA:7,CNTAO:9,KRPUS:12,USSEA:23}},
+usOut:{snap:1,e0:Date.UTC(2026,7,31),off:{USSEA:0,CAVAN:3,CAPRR:12,KRPUS:28,CNYTN:33}}}
+};
+const PFMN={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+const PFMM=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const PFDY=86400000, PFWK=7*86400000;
+function pfTime(str){
+var m=(str||"").match(/(\d{1,2}) (\w{3})/); if(!m)return null;
+var ym=(SNAPSHOT||"").match(/\b(20\d\d)\b/); var Y=ym?+ym[1]:new Date().getUTCFullYear();
+var sm=(SNAPSHOT||"").match(/\d{1,2} (\w{3})/); var smo=sm?PFMN[sm[1]]:6;
+var mo=PFMN[m[2]]; if(mo==null)return null;
+if(mo-smo<-5)Y++; if(mo-smo>6)Y--;
+return Date.UTC(Y,mo,+m[1]);
+}
+function pfFmt(ms){var d=new Date(ms);return d.getUTCDate()+" "+PFMM[d.getUTCMonth()];}
+function pfCalc(s){
+var cfg=(PF[s.svc]||{})[s.dir]; if(!cfg)return null;
+var route=s.route||[], res={};
+if(cfg.snap){
+route.forEach(function(p,i){var off=cfg.off[p.code]; if(off==null)return;
+var t=pfTime(p.eta&&p.eta!=="-"?p.eta:p.etd); if(t==null)return;
+var base=cfg.e0+off*PFDY, k=Math.round((t-base)/PFWK), pf=base+k*PFWK;
+res[i]={pf:pf,d:Math.round((t-pf)/PFDY)};});
+return res;
+}
+var wk=null, m=cfg.rx?String(s.voyage||"").match(cfg.rx):null;
+if(m)wk=(+m[1])-cfg.n0;
+function snapWk(){for(var i=0;i<route.length;i++){var off=cfg.off[route[i].code];if(off==null)continue;
+var t=pfTime(route[i].eta&&route[i].eta!=="-"?route[i].eta:route[i].etd); if(t==null)continue;
+return Math.round((t-(cfg.e0+off*PFDY))/PFWK);}return null;}
+if(wk==null)wk=snapWk();
+else{var s0=snapWk(); if(s0!=null&&Math.abs(s0-wk)>6)wk=s0;}
+if(wk==null)return null;
+var used={};
+route.forEach(function(p,i){var off=cfg.off[p.code]; if(off==null||used[p.code])return; used[p.code]=1;
+var pf=cfg.e0+(wk*7+off)*PFDY;
+var t=pfTime(p.eta&&p.eta!=="-"?p.eta:p.etd);
+res[i]={pf:pf,d:(t!=null)?Math.round((t-pf)/PFDY):null};});
+return res;
+}
+function pfHtml(r){
+if(!r)return "";
+var d=r.d, b=d==null?"":(d>0?'<span class="pfd late">+'+d+'d</span>':(d<0?'<span class="pfd early">'+d+'d</span>':'<span class="pfd on">on PF</span>'));
+return '<br><span class="pf">PF '+pfFmt(r.pf)+'</span>'+b;
+}
+// -------------------------------------------------------------------------
 function aisHtml(s){
   if(!s.ais||s.ais==="-")return "";
   return `<span class="ais"><span class="dot ${s.st||'bad'}"></span>${s.pos} · ${s.ais}${s.spd&&s.spd!=="-"&&s.spd!==""?" · "+s.spd:""}${s.dest?" → "+s.dest:""}${s.src&&s.src!=="-"?" ["+s.src+"]":""}</span>`;
@@ -389,12 +454,13 @@ function cyLabel(cy){
   return `<span class="cy${bad?' na':''}">CY ${bad?'N/A':cy}</span>`;
 }
 function sailHtml(s){
+  const pfm=pfCalc(s)||{};
   const route=(s.route||[]).map((p,i)=>{
     const cls=i===0?"first":(i===s.route.length-1?"last":"");
     const eta=(p.eta&&p.eta!=="-")?("ETA "+p.eta):"";
     const etd=(p.etd&&p.etd!=="-"&&p.etd!=="")?("ETD "+p.etd):"";
     const times=[eta,etd].filter(Boolean).join(" · ");
-    return `<li class="${cls}"><span class="pn">${p.port}</span> <span class="cd">${p.code}</span><br><span class="tm">${times}</span> ${cyLabel(p.cy)}</li>`;
+    return `<li class="${cls}"><span class="pn">${p.port}</span> <span class="cd">${p.code}</span><br><span class="tm">${times}</span> ${cyLabel(p.cy)}${pfHtml(pfm[i])}</li>`;
   }).join("");
   const teu=(s.teu&&s.teu!=="N/A"&&s.teu!=="")?(s.teu+" TEU"):"TEU N/A";
   const ck=CHANGES[s.svc+'|'+s.dir+'|'+s.voyage];
@@ -404,13 +470,14 @@ function sailHtml(s){
   var pf=PHASEMAP[s.svc+'|'+s.dir+'|'+s.voyage];
   var pbadge=(pf&&pf.length)?'<span class="cbadge omit" style="background:#fde8ef;color:#a01457;border-color:#f0a8c4">⟳ PHASE-OUT</span>':'';
   const hd=(s.route&&s.route[0]&&s.route[0].eta&&s.route[0].eta!=='-')?s.route[0].eta:(s.dep||'-');
+  const pfh=pfm[0]?('<span class="pfh">PF '+pfFmt(pfm[0].pf)+(pfm[0].d!=null?(pfm[0].d>0?' +'+pfm[0].d+'d':(pfm[0].d<0?' '+pfm[0].d+'d':' \u2713')):'')+'</span>'):'';
   return `<div class="sail${ck?' chgd':''}${(ok&&ok.length)?' omit-row':''}" data-imo="${s.imo}${s.voyage}">
     <div class="sail-h">
-      <div class="sail-dep">${hd.split(' ').slice(0,2).join(' ')}<small>ETA ${hd.split(' ').slice(2).join(' ')||''}</small></div>
+      <div class="sail-dep">${hd.split(' ').slice(0,2).join(' ')}<small>ETA ${hd.split(' ').slice(2).join(' ')||''}</small>${pfh}</div>
       <div class="sail-v"><span class="nm">${s.vessel}</span>${cbadge}${obadge}${pbadge} <span class="vy">${s.voyage} · IMO ${s.imo} · ${teu}</span><br>${aisHtml(s)}</div>
       <span class="chev">▾</span>
     </div>
-    <div class="detail"><div class="cuts ch">Route &amp; CY cut-off (per load port)</div><ul class="route">${route}</ul></div>
+    <div class="detail"><div class="cuts ch">Route &middot; CY cut-off &middot; PF proforma (ZIM fixed days)</div><ul class="route">${route}</ul></div>
   </div>`;
 }
 function boardHtml(sv,svc,dir){
