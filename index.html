@@ -202,7 +202,7 @@ td.empty2{color:#c3ccd6;text-align:center;}
   <div id="market"></div>
 
   <div class="note">
-    <b>How to read this.</b> Each service shows two boards: <b>Asia → US</b> and <b>US → Asia</b>, built from the <b>last regional port</b> 7 weeks ahead, so vessels already working the region appear first (furthest advanced at the top). Each card shows vessel, voyage, IMO and capacity (<b>TEU</b>). Click a sailing for its <b>full port-by-port route</b> with ETA / ETD and the <b>CY cut-off at each load port</b> (N/A where MSC publishes none). Positions and last AIS come from VesselFinder (ocean-basin precision). Roster is rebuilt from MSC's live schedule. <b>PF</b> = proforma call date per the ZIM fixed-day line schedule (ZNS = Empire, Z7S = America, ZSL = Lone Star, ZNP = Chinook): the purple chip under each ETA is the proforma date, the badge is actual vs proforma in days.
+    <b>How to read this.</b> Each service shows two boards: <b>Asia → US</b> and <b>US → Asia</b>, built from the <b>last regional port</b> 7 weeks ahead, so vessels already working the region appear first (furthest advanced at the top). Each card shows vessel, voyage, IMO and capacity (<b>TEU</b>). Click a sailing for its <b>full port-by-port route</b> with ETA / ETD and the <b>CY cut-off at each load port</b> (N/A where MSC publishes none). Positions and last AIS come from VesselFinder (ocean-basin precision). Roster is rebuilt from MSC's live schedule. <b>PF</b> = proforma call date per the fixed-day weekly line schedule: the purple chip under each ETA is the proforma date, the badge is actual vs proforma in days.
   </div>
 </div>
 
@@ -386,9 +386,8 @@ function renderMap(){
   });
   document.getElementById('mapcount').textContent=n+' vessels';
 }
-// ---- ZIM proforma overlay ----------------------------------------------
-// Fixed weekly call days from ZIM line schedules (ZNS=Empire, Z7S=America,
-// ZSL=Lone Star, ZNP=Chinook), as day-offsets from each direction day-0 port,
+// ---- Proforma overlay ----------------------------------------------
+// Fixed weekly call days per service, as day-offsets from each direction day-0 port,
 // anchored on a clean on-proforma reference voyage. Slots step +7d per voyage
 // number; vessels without a series voyage no. snap to the nearest weekly slot;
 // The proforma grid is FIXED: slots roll +7d per voyage number week after week,
@@ -477,7 +476,7 @@ function sailHtml(s){
       <div class="sail-v"><span class="nm">${s.vessel}</span>${cbadge}${obadge}${pbadge} <span class="vy">${s.voyage} · IMO ${s.imo} · ${teu}</span><br>${aisHtml(s)}</div>
       <span class="chev">▾</span>
     </div>
-    <div class="detail"><div class="cuts ch">Route &middot; CY cut-off &middot; PF proforma (ZIM fixed days)</div><ul class="route">${route}</ul></div>
+    <div class="detail"><div class="cuts ch">Route &middot; CY cut-off &middot; PF proforma (fixed days)</div><ul class="route">${route}</ul></div>
   </div>`;
 }
 function boardHtml(sv,svc,dir){
