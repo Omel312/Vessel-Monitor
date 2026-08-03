@@ -63,15 +63,15 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,Bl
 .route li.first::before{background:var(--asia);} .route li.last::before{background:var(--us);}
 .route .pn{font-weight:700;color:var(--navy);font-size:12.5px;}
 .route .cd{font-size:10px;color:var(--muted);font-weight:600;}
-.route .tm{font-size:11px;color:var(--muted);}
+.route .tm{font-size:11px;font-weight:700;color:var(--ink);}
 .route .cy{display:inline-block;margin-top:2px;font-size:10.5px;font-weight:700;color:var(--asia);background:#eef6fb;border-radius:4px;padding:1px 6px;}
 .route .cy.na{color:#9fb3bd;background:#f3f6f8;font-weight:600;}
-.pf{display:inline-block;margin-top:3px;font-size:10.5px;font-weight:700;color:#5b4ea0;background:#f0eefb;border-radius:4px;padding:1px 6px;}
+.pf{display:inline-block;margin-top:3px;font-size:10.5px;font-weight:400;color:#a4adb8;}
 .pfd{font-weight:800;font-size:10.5px;margin-left:4px;}
 .pfd.late{color:var(--red);}
 .pfd.early{color:var(--green);}
 .pfd.on{color:var(--green);}
-.sail-dep .pfh{display:block;font-weight:800;color:#5b4ea0;font-size:9.5px;margin-top:2px;}
+.sail-dep .pfh{display:block;font-weight:400;color:#a4adb8;font-size:9.5px;margin-top:2px;}
 .cuts{margin-top:8px;}
 .cuts .ch{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:6px;}
 .cuts table{width:100%;border-collapse:collapse;font-size:12px;}
@@ -476,7 +476,7 @@ function sailHtml(s){
       <div class="sail-v"><span class="nm">${s.vessel}</span>${cbadge}${obadge}${pbadge} <span class="vy">${s.voyage} · IMO ${s.imo} · ${teu}</span><br>${aisHtml(s)}</div>
       <span class="chev">▾</span>
     </div>
-    <div class="detail"><div class="cuts ch">Route &middot; CY cut-off &middot; PF proforma (fixed days)</div><ul class="route">${route}</ul></div>
+    <div class="detail"><div class="cuts ch">Route &middot; CY cut-off &middot; Proforma days</div><ul class="route">${route}</ul></div>
   </div>`;
 }
 function boardHtml(sv,svc,dir){
