@@ -555,7 +555,7 @@ function renderNotif(){
   el.querySelector('.notif-h').addEventListener('click',()=>{notifOpen=!notifOpen;el.querySelector('.notif').classList.toggle('open');});
 }
 let MKT=null, mAlliance='ZIM+MSC', mAsia='ALL', mUs='ALL', mSel=null;
-const ALORDER=["ZIM+MSC","Gemini","Ocean Alliance","Premier Alliance"];const ALCOLOR={"ZIM+MSC":"#0b3d5c","Gemini":"#1f6fb2","Ocean Alliance":"#2e7d4f","Premier Alliance":"#7a4ea3"};const alKeys=()=>{var k=Object.keys((MKT&&MKT.alliances)||{});return ALORDER.filter(a=>k.indexOf(a)>=0).concat(k.filter(a=>ALORDER.indexOf(a)<0));};
+const ALORDER=["ZIM+MSC","Gemini","Ocean Alliance","Premier Alliance",'WHL+HPL'];const ALCOLOR={"ZIM+MSC":"#0b3d5c","Gemini":"#1f6fb2","Ocean Alliance":"#2e7d4f","Premier Alliance":"#7a4ea3",'WHL+HPL':'#7a4d1f'};const alKeys=()=>{var k=Object.keys((MKT&&MKT.alliances)||{});return ALORDER.filter(a=>k.indexOf(a)>=0).concat(k.filter(a=>ALORDER.indexOf(a)<0));};
 function isoWeekOf(dt){var d=new Date(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth(),dt.getUTCDate()));var dy=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-dy+3);var w1=new Date(Date.UTC(d.getUTCFullYear(),0,4));return 1+Math.round(((d-w1)/864e5-3+((w1.getUTCDay()+6)%7))/7);}
 const MWEEKS=(function(){var a=[],t=Date.now();for(var i=0;i<8;i++)a.push(isoWeekOf(new Date(t+i*604800000)));return a;})();
 function curAll(){
