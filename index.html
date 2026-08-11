@@ -180,6 +180,7 @@ td.empty2{color:#c3ccd6;text-align:center;}
 .pctip .q em{font-style:normal;color:var(--muted)}
 .pctip .q b{margin-left:auto;font-weight:800;color:var(--navy);padding-left:16px}
 .pctip .q b.hot{color:var(--red)}
+.wsim{font-style:italic;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -371,8 +372,11 @@ var last=null,prev=null;
 for(var i=p.rows.length-1;i>=0;i--){var r=p.rows[i];if(r[5]==null)continue;if(!last){last=r;}else{prev=r;break;}}
 if(!last)return;
 var q=last[5];
-if(!(q>1.5))return;
-CONGLIST.push({name:p.name,q:q,prevQ:prev?prev[5]:null,aShips:last[1],aTeu:last[3],pShips:last[2],date:last[0],level:(q>=2.5?"heavy":"building")});
+if(!(q>=1.4))return;
+var shipsR=Math.round(last[1]);
+var wait=null;
+if(shipsR>0&&last[3]!=null){wait=Math.ceil(((last[3]/shipsR)/1.75/3.5/25/24)*q);if(!isFinite(wait)||wait<0)wait=null;}
+CONGLIST.push({name:p.name,q:q,prevQ:prev?prev[5]:null,aShips:last[1],aTeu:last[3],pShips:last[2],wait:wait,date:last[0],level:(q>=2.5?"heavy":"building")});
 });
 CONGLIST.sort(function(a,b){return b.q-a.q;});
 }
@@ -383,12 +387,12 @@ function K(v){return v==null?"\u2014":(v>=1000?((Math.round(v/100)/10).toFixed(1
 function IN(v){return v==null?"\u2014":String(Math.round(v));}
 function MD(d){if(!d)return "";var P=d.split("-");var M=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];return (+P[2])+" "+M[+P[1]-1];}
 if(!C){el.innerHTML="";return;}
-var hint="Linerlytica queue-to-berth ratio \u00b7 flagged above 1.5 \u00b7 as at "+MD(C.asOf);
+var hint="Linerlytica queue-to-berth ratio \u00b7 flagged from 1.4 \u00b7 waiting days simulated \u00b7 as at "+MD(C.asOf);
 if(!CONGLIST.length){el.innerHTML="<div class=\"cong\"><div class=\"cong-h\"><span class=\"ico\">\u2693</span><span class=\"ti\">Port watch \u2014 congestion</span><span class=\"ok\">No tracked port above a 1.5 queue-to-berth ratio</span></div><div class=\"cong-body\"><div class=\"crow\" style=\"color:var(--muted)\">"+hint+"</div></div></div>";return;}
 var rows=CONGLIST.map(function(c){
 var tr="";
 if(c.prevQ!=null){var d=c.q-c.prevQ;if(Math.abs(d)>=0.05)tr=" <span style=\"font-weight:700;color:"+(d>0?"var(--red)":"var(--green)")+"\">"+(d>0?"\u25b2 +":"\u25bc ")+(Math.round(d*100)/100).toFixed(2)+"</span>";else tr=" <span style=\"color:var(--muted)\">\u2192 flat</span>";}
-return "<div class=\"crow\"><span class=\"lvl "+c.level+"\">"+(c.level==="heavy"?"congested":"building")+"</span><b>"+c.name+"</b><span class=\"ev\">\u2014 queue/berth <b style=\"color:var(--navy)\">"+c.q.toFixed(2)+"</b>"+tr+" \u00b7 "+IN(c.aShips)+" ships / "+K(c.aTeu)+" TEU at anchorage \u00b7 "+IN(c.pShips)+" ships in port</span></div>";
+return "<div class=\"crow\"><span class=\"lvl "+c.level+"\">"+(c.level==="heavy"?"congested":"building")+"</span><b>"+c.name+"</b><span class=\"ev\">\u2014 queue/berth <b style=\"color:var(--navy)\">"+c.q.toFixed(2)+"</b>"+tr+" \u00b7 "+IN(c.aShips)+" ships / "+K(c.aTeu)+" TEU at anchorage \u00b7 "+"<i class=\"wsim\">est. waiting "+(c.wait==null?"n/a":(Math.max(0,c.wait-2)+"-"+c.wait+" days"))+"</i></span></div>";
 }).join("");
 el.innerHTML="<div class=\"cong\"><div class=\"cong-h\"><span class=\"ico\">\u2693</span><span class=\"ti\">Port watch \u2014 congestion</span><span class=\"hint\">"+hint+"</span></div><div class=\"cong-body\">"+rows+"</div></div>";
 }
