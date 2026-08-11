@@ -149,6 +149,23 @@ td.empty2{color:#c3ccd6;text-align:center;}
 .mdetail{margin-top:12px;border-top:1px dashed var(--line);padding-top:10px;display:none;}
 .mdetail.show{display:block;}
 .mstub{margin-top:12px;font-size:11.5px;color:var(--muted);background:#f7f9fb;border:1px dashed var(--line);border-radius:8px;padding:10px 12px;line-height:1.5;}
+
+/* --- port congestion (Linerlytica) --- */
+#pcong{margin-top:18px}
+.pcstat{display:flex;gap:16px;flex-wrap:wrap;margin:2px 0 12px}
+.pcstat .s{min-width:108px}
+.pcstat .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700}
+.pcstat .v{font-size:17px;font-weight:800;color:var(--navy);line-height:1.3}
+.pcstat .d{font-size:10.5px;font-weight:700;margin-left:5px}
+.pcstat .d.up{color:var(--red)}.pcstat .d.dn{color:var(--green)}.pcstat .d.fl{color:var(--muted)}
+.pcleg{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px;font-size:11px;color:var(--muted);font-weight:600}
+.pcleg i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.pcleg i.ln{height:3px;width:16px;border-radius:2px;vertical-align:4px}
+#pcChart svg{width:100%;height:auto;display:block}
+#pcSeg button{font-size:12px;padding:6px 10px}
+#pcWin{margin-top:0}
+.pcrow{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;margin-bottom:12px}
+.pcnote{font-size:10.5px;color:var(--muted);margin-top:8px}
 </style>
 </head>
 <body>
@@ -201,7 +218,17 @@ td.empty2{color:#c3ccd6;text-align:center;}
 
   <div id="market"></div>
 
-  <div class="note">
+  <div id="pcong" class="cong">
+<div class="cong-h"><span class="ico">⚓</span><span class="ti">Port congestion — trend analysis</span><span class="hint" id="pcSrc"></span></div>
+<div class="cong-body">
+<div class="pcrow"><div style="flex:1 1 100%"><div class="lbl">Port</div><div class="seg" id="pcSeg"></div></div>
+<div><div class="lbl">Range</div><div class="seg" id="pcWin"></div></div></div>
+<div id="pcStat" class="pcstat"></div>
+<div id="pcChart"></div>
+<div class="pcleg"><span><i style="background:#c98a14"></i>TEU at anchorage</span><span><i style="background:#2f6f9f"></i>TEU at port</span><span><i class="ln" style="background:#c0392b"></i>Ships at anchorage</span><span><i class="ln" style="background:#1d8a4e"></i>Ships in port</span></div>
+<div class="pcnote" id="pcNote"></div>
+</div></div>
+<div class="note">
     <b>How to read this.</b> Each service shows two boards: <b>Asia → US</b> and <b>US → Asia</b>, built from the <b>last regional port</b> 7 weeks ahead, so vessels already working the region appear first (furthest advanced at the top). Each card shows vessel, voyage, IMO and capacity (<b>TEU</b>). Click a sailing for its <b>full port-by-port route</b> with ETA / ETD and the <b>CY cut-off at each load port</b> (N/A where MSC publishes none). Positions and last AIS come from VesselFinder (ocean-basin precision). Roster is rebuilt from MSC's live schedule. <b>PF</b> = proforma call date per the fixed-day weekly line schedule: the purple chip under each ETA is the proforma date, the badge is actual vs proforma in days.
   </div>
 </div>
@@ -396,11 +423,11 @@ const PF={
 EM:{asiaOut:{rx:/^GE(\d+)E$/,n0:637,e0:Date.UTC(2026,8,7),off:{CNSHA:0,CNNGB:3,KRPUS:6,USNYC:35,USBAL:38,USORF:41,USPEF:44,PAROD:49}},
 usOut:{rx:/^GE(\d+)W$/,n0:637,e0:Date.UTC(2026,8,7),off:{USNYC:0,USBAL:3,USORF:6,USPEF:9,PAROD:14,CNSHA:42,CNNGB:45,KRPUS:48}}},
 AM:{asiaOut:{rx:/^GU(\d+)W$/,n0:634,e0:Date.UTC(2026,7,20),off:{THLCH:0,CNYTN:6,VNHPH:9,VNVUT:11,SGSIN:14,USNYC:45}},
-usOut:{rx:/^GU(\d+)E$/,n0:637,e0:Date.UTC(2026,8,6),off:{USNYC:0,USBAL:3,USORF:6,INTRV:37,SGSIN:42,THLCH:46}}},
+usOut:{rx:/^GU(\d+)E$/,n0:637,e0:Date.UTC(2026,8,6),off:{USNYC:0,USBAL:4,USORF:6,INTRV:35,SGSIN:41,THLCH:44}}},
 LS:{asiaOut:{rx:/^GN(\d+)E$/,n0:636,e0:Date.UTC(2026,8,4),off:{VNVUT:0,CNYTN:5,CNNGB:8,CNSHA:11,KRPUS:13,USHOU:39}},
-usOut:{rx:/^GN(\d+)W$/,n0:637,e0:Date.UTC(2026,8,8),off:{USHOU:0,USMOB:5,USTPA:8,USMIA:11,DOCAU:14,SGSIN:49,VNVUT:52}}},
-CH:{asiaOut:{rx:/^UK(\d+)[A-Z]$/,n0:635,e0:Date.UTC(2026,7,29),off:{CNYTN:0,CNNGB:3,CNSHA:7,CNTAO:9,KRPUS:12,USSEA:23}},
-usOut:{rx:/^UK(\d+)[A-Z]$/,n0:637,e0:Date.UTC(2026,8,7),off:{USSEA:0,CAVAN:3,CAPRR:12,KRPUS:28,CNYTN:33}}}
+usOut:{rx:/^GN(\d+)W$/,n0:637,e0:Date.UTC(2026,8,8),off:{USHOU:0,USMOB:5,USTPA:8,USMIA:11,DOCAU:13,SGSIN:49,VNVUT:52},alt:{maxN:632,off:{USHOU:0,USMOB:5,USTPA:8,USMIA:11,DOCAU:14,SGSIN:49,VNVUT:52}}}},
+CH:{asiaOut:{rx:/^UK(\d+)[A-Z]$/,n0:635,e0:Date.UTC(2026,7,29),off:{CNYTN:0,CNNGB:3,CNSHA:5,CNTAO:7,KRPUS:10,USSEA:22}},
+usOut:{rx:/^UK(\d+)[A-Z]$/,n0:637,e0:Date.UTC(2026,8,7),off:{USSEA:0,CAVAN:3,CAPRR:10,KRPUS:28,CNYTN:33}}}
 };
 const PFMN={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
 const PFMM=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
@@ -414,8 +441,10 @@ if(mo-smo<-5)Y++; if(mo-smo>6)Y--;
 return Date.UTC(Y,mo,+m[1]);
 }
 function pfFmt(ms){var d=new Date(ms);return d.getUTCDate()+" "+PFMM[d.getUTCMonth()];}
+function pfDay(ms){return ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][new Date(ms).getUTCDay()];}
 function pfCalc(s){
-var cfg=(PF[s.svc]||{})[s.dir]; if(!cfg)return null;
+var cfg=(PF[s.svc]||{})[s.dir];
+if(cfg&&cfg.alt&&cfg.rx){var _am=String(s.voyage||"").match(cfg.rx);if(_am&&+_am[1]<=cfg.alt.maxN)cfg=Object.assign({},cfg,{off:cfg.alt.off});} if(!cfg)return null;
 var route=s.route||[], res={};
 if(cfg.snap){
 route.forEach(function(p,i){var off=cfg.off[p.code]; if(off==null)return;
@@ -441,7 +470,7 @@ return res;
 function pfHtml(r){
 if(!r)return "";
 var d=r.d, b=d==null?"":(d>0?'<span class="pfd late">+'+d+'d</span>':(d<0?'<span class="pfd early">'+d+'d</span>':'<span class="pfd on">on PF</span>'));
-return '<br><span class="pf">PF '+pfFmt(r.pf)+'</span>'+b;
+return '<br><span class="pf">PF '+pfFmt(r.pf)+' ('+pfDay(r.pf)+')</span>'+b;
 }
 // -------------------------------------------------------------------------
 function aisHtml(s){
@@ -469,7 +498,7 @@ function sailHtml(s){
   var pf=PHASEMAP[s.svc+'|'+s.dir+'|'+s.voyage];
   var pbadge=(pf&&pf.length)?'<span class="cbadge omit" style="background:#fde8ef;color:#a01457;border-color:#f0a8c4">⟳ PHASE-OUT</span>':'';
   const hd=(s.route&&s.route[0]&&s.route[0].eta&&s.route[0].eta!=='-')?s.route[0].eta:(s.dep||'-');
-  const pfh=pfm[0]?('<span class="pfh">PF '+pfFmt(pfm[0].pf)+(pfm[0].d!=null?(pfm[0].d>0?' +'+pfm[0].d+'d':(pfm[0].d<0?' '+pfm[0].d+'d':' \u2713')):'')+'</span>'):'';
+  const pfh=pfm[0]?('<span class="pfh">PF '+pfFmt(pfm[0].pf)+' ('+pfDay(pfm[0].pf)+')'+(pfm[0].d!=null?(pfm[0].d>0?' +'+pfm[0].d+'d':(pfm[0].d<0?' '+pfm[0].d+'d':' \u2713')):'')+'</span>'):'';
   return `<div class="sail${ck?' chgd':''}${(ok&&ok.length)?' omit-row':''}" data-imo="${s.imo}${s.voyage}">
     <div class="sail-h">
       <div class="sail-dep">${hd.split(' ').slice(0,2).join(' ')}<small>ETA ${hd.split(' ').slice(2).join(' ')||''}</small>${pfh}</div>
@@ -693,6 +722,71 @@ box.querySelector('.notif-h').addEventListener('click',function(){window.__mktOp
 window.renderMktNotif();
 }).catch(function(){});}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(mkNotif,900);});else setTimeout(mkNotif,900);
+})();
+</script>
+<script>
+(function(){
+var C={aTeu:"#c98a14",pTeu:"#2f6f9f",aShips:"#c0392b",pShips:"#1d8a4e"};
+var PC=null,SEL=0,WIN=30;
+var WINS=[[30,"30 days"],[90,"90 days"],[0,"All"]];
+var MM=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function fd(d){var p=d.split("-");return (+p[2])+" "+MM[+p[1]-1];}
+function fdy(d){var p=d.split("-");return (+p[2])+" "+MM[+p[1]-1]+" "+String(p[0]).slice(2);}
+function nf(n){return n==null?"\u2014":Math.round(n).toLocaleString("en-US");}
+function n1(n){return n==null?"\u2014":(Math.round(n*10)/10).toLocaleString("en-US",{minimumFractionDigits:1,maximumFractionDigits:1});}
+function n2(n){return n==null?"\u2014":(Math.round(n*100)/100).toFixed(2);}
+function nice(m){if(m<=0)return 1;var e=Math.pow(10,Math.floor(Math.log(m)/Math.LN10));var f=m/e;var A=[1,1.2,1.5,2,2.5,3,4,5,6,8,10],i;for(i=0;i<A.length;i++){if(f<=A[i]+1e-9)return A[i]*e;}return 10*e;}
+function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function win(p){return (WIN>0&&p.rows.length>WIN)?p.rows.slice(-WIN):p.rows;}
+function chart(rows){
+var n=rows.length;if(!n)return "";
+var W=980,H=380,L=68,R=54,T=28,B=52;var pw=W-L-R,ph=H-T-B;
+var maxT=0,maxS=0;rows.forEach(function(r){if(r[3]>maxT)maxT=r[3];if(r[4]>maxT)maxT=r[4];if(r[1]>maxS)maxS=r[1];if(r[2]>maxS)maxS=r[2];});
+var yT=nice(maxT*1.04)||1,yS=nice(maxS*1.06)||1;
+var slot=pw/n,bw=Math.max(1.2,Math.min(17,slot*0.34)),gap=n>60?0:1;
+function cx(i){return L+slot*(i+0.5);}
+function yTeu(v){return T+ph-(v/yT)*ph;}
+function ySh(v){return T+ph-(v/yS)*ph;}
+var s="<svg viewBox=\"0 0 "+W+" "+H+"\" xmlns=\"http://www.w3.org/2000/svg\">";
+var G=5,i,g;
+for(g=0;g<=G;g++){var yy=T+ph-(ph*g/G);s+="<line x1=\""+L+"\" y1=\""+yy.toFixed(1)+"\" x2=\""+(L+pw)+"\" y2=\""+yy.toFixed(1)+"\" stroke=\"#eef1f5\" stroke-width=\"1\"/>";
+s+="<text x=\""+(L-9)+"\" y=\""+(yy+3.5).toFixed(1)+"\" text-anchor=\"end\" font-size=\"10\" fill=\"#5d6b7d\">"+nf(yT*g/G)+"</text>";
+s+="<text x=\""+(L+pw+9)+"\" y=\""+(yy+3.5).toFixed(1)+"\" text-anchor=\"start\" font-size=\"10\" fill=\"#5d6b7d\">"+n1(yS*g/G)+"</text>";}
+s+="<line x1=\""+L+"\" y1=\""+(T+ph)+"\" x2=\""+(L+pw)+"\" y2=\""+(T+ph)+"\" stroke=\"#c9d3de\" stroke-width=\"1\"/>";
+for(i=0;i<n;i++){var xa=cx(i)-bw-gap/2,xb=cx(i)+gap/2;
+var ha=(rows[i][3]==null)?0:ph-(yTeu(rows[i][3])-T),hb=(rows[i][4]==null)?0:ph-(yTeu(rows[i][4])-T);
+s+="<rect x=\""+xa.toFixed(1)+"\" y=\""+yTeu(rows[i][3]||0).toFixed(1)+"\" width=\""+bw.toFixed(1)+"\" height=\""+Math.max(0,ha).toFixed(1)+"\" fill=\""+C.aTeu+"\"/>";
+s+="<rect x=\""+xb.toFixed(1)+"\" y=\""+yTeu(rows[i][4]||0).toFixed(1)+"\" width=\""+bw.toFixed(1)+"\" height=\""+Math.max(0,hb).toFixed(1)+"\" fill=\""+C.pTeu+"\"/>";}
+function poly(idx,col){var pts=[],j;for(j=0;j<n;j++){if(rows[j][idx]==null)continue;pts.push(cx(j).toFixed(1)+","+ySh(rows[j][idx]).toFixed(1));}
+var o="<polyline fill=\"none\" stroke=\""+col+"\" stroke-width=\"2\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\""+pts.join(" ")+"\"/>";
+if(n<=45){for(j=0;j<n;j++){if(rows[j][idx]==null)continue;o+="<circle cx=\""+cx(j).toFixed(1)+"\" cy=\""+ySh(rows[j][idx]).toFixed(1)+"\" r=\"2.8\" fill=\"#fff\" stroke=\""+col+"\" stroke-width=\"1.8\"/>";}}return o;}
+s+=poly(2,C.pShips);s+=poly(1,C.aShips);
+var step=Math.max(1,Math.ceil(n/11));
+for(i=0;i<n;i++){if(i%step!==0&&i!==n-1)continue;s+="<text x=\""+cx(i).toFixed(1)+"\" y=\""+(T+ph+18)+"\" text-anchor=\"middle\" font-size=\"10\" fill=\"#5d6b7d\">"+fd(rows[i][0])+"</text>";}
+s+="<text x=\""+(L-9)+"\" y=\""+(T-14)+"\" text-anchor=\"end\" font-size=\"9.5\" font-weight=\"700\" fill=\"#5d6b7d\">TEU</text>";
+s+="<text x=\""+(L+pw+9)+"\" y=\""+(T-14)+"\" text-anchor=\"start\" font-size=\"9.5\" font-weight=\"700\" fill=\"#5d6b7d\">SHIPS</text>";
+if(n<=120){for(i=0;i<n;i++){var r=rows[i];var tip=fdy(r[0])+"\nShips at anchorage: "+n1(r[1])+"\nShips in port: "+n1(r[2])+"\nTEU at anchorage: "+nf(r[3])+"\nTEU at port: "+nf(r[4])+"\nQueue/berth ratio: "+n2(r[5]);
+s+="<rect x=\""+(L+slot*i).toFixed(1)+"\" y=\""+T+"\" width=\""+slot.toFixed(1)+"\" height=\""+ph+"\" fill=\"transparent\"><title>"+esc(tip)+"</title></rect>";}}
+s+="</svg>";return s;}
+function delta(a,b){if(a==null||b==null)return "";var d=b-a;if(Math.abs(d)<0.05)return "<span class=\"d fl\">flat</span>";
+return "<span class=\"d "+(d>0?"up":"dn")+"\">"+(d>0?"+":"")+(Math.abs(d)>=100?nf(d):n1(d))+"</span>";}
+function stats(rows){var f=rows[0],l=rows[rows.length-1];
+function box(k,v,d){return "<div class=\"s\"><div class=\"k\">"+k+"</div><div class=\"v\">"+v+d+"</div></div>";}
+return box("Ships at anchorage",n1(l[1]),delta(f[1],l[1]))+box("Ships in port",n1(l[2]),delta(f[2],l[2]))
++box("TEU at anchorage",nf(l[3]),delta(f[3],l[3]))+box("TEU at port",nf(l[4]),delta(f[4],l[4]))
++box("Queue / berth",n2(l[5]),delta(f[5],l[5]));}
+function draw(){var p=PC.ports[SEL];var rw=win(p);
+document.getElementById("pcChart").innerHTML=chart(rw);document.getElementById("pcStat").innerHTML=stats(rw);
+var b=document.getElementById("pcSeg").children,i;for(i=0;i<b.length;i++)b[i].className=(i===SEL?"active":"");
+var w=document.getElementById("pcWin").children;for(i=0;i<w.length;i++)w[i].className=(WINS[i][0]===WIN?"active":"");
+document.getElementById("pcNote").innerHTML="Source: Linerlytica \u00b7 showing "+fdy(rw[0][0])+" \u2192 "+fdy(rw[rw.length-1][0])+" ("+rw.length+" of "+p.rows.length+" stored daily snapshots) \u00b7 bars read on the left axis (TEU), lines on the right (ships)"+(rw.length<=120?" \u00b7 hover any day for the full figures":"")+".";}
+function init(){var seg=document.getElementById("pcSeg");seg.innerHTML="";
+PC.ports.forEach(function(p,i){var bt=document.createElement("button");bt.textContent=p.name;bt.onclick=function(){SEL=i;draw();};seg.appendChild(bt);});
+var ws=document.getElementById("pcWin");ws.innerHTML="";
+WINS.forEach(function(x){var bt=document.createElement("button");bt.textContent=x[1];bt.onclick=function(){WIN=x[0];draw();};ws.appendChild(bt);});
+document.getElementById("pcSrc").textContent="as at "+fd(PC.asOf)+" \u00b7 linerlytica.com";draw();}
+function boot(j){PC=j;if(!PC||!PC.ports||!PC.ports.length||!PC.ports[0].rows.length){document.getElementById("pcong").style.display="none";return;}init();}
+if(window.__CONGPRE){boot(window.__CONGPRE);}else{fetch("congestion.json?t="+Date.now()).then(function(r){return r.json();}).then(boot).catch(function(){document.getElementById("pcong").style.display="none";});}
 })();
 </script>
 </body>
