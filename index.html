@@ -182,8 +182,9 @@ td.empty2{color:#c3ccd6;text-align:center;}
 .pctip .q b.hot{color:var(--red)}
 .wsim{font-style:italic;color:var(--muted)}
 .wstop{font-style:italic;color:var(--red);font-weight:700}
-.wxbad{color:var(--red);font-weight:700}
-.wxwarn{color:var(--amber);font-weight:700}
+.wxbad{color:#1c5c8c;font-weight:700}
+.wxwarn{color:#2f6f9f;font-weight:700}
+.lvl.wx{background:#e3edf6;color:#1c5c8c;border-color:#c6dcee}
 
 #congestion{position:relative}
 .wxhit{cursor:help;border-bottom:1px dotted currentColor}
@@ -191,9 +192,9 @@ td.empty2{color:#c3ccd6;text-align:center;}
 .wxtip.on{opacity:1}
 .wxtip .h{display:flex;align-items:center;gap:8px;font-weight:800;color:var(--navy);font-size:12.5px;margin-bottom:8px;padding-bottom:7px;border-bottom:1px solid #eef1f5}
 .wxtip .pill{margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2.5px 8px;border-radius:20px}
-.wxtip .pill.suspended{background:#fdecea;color:var(--red)}
-.wxtip .pill.recovering{background:#fdf3e0;color:var(--amber)}
-.wxtip .pill.watch{background:#eaf1f8;color:#2f6f9f}
+.wxtip .pill.suspended{background:#1c5c8c;color:#fff}
+.wxtip .pill.recovering{background:#e3edf6;color:#1c5c8c}
+.wxtip .pill.watch{background:#eef3f8;color:#5d8fb8}
 .wxtip .bd{color:var(--ink);line-height:1.55}
 .wxtip .kv{display:flex;gap:10px;align-items:baseline;margin-top:8px;padding-top:7px;border-top:1px solid #eef1f5}
 .wxtip .kv em{font-style:normal;color:var(--muted)}
@@ -412,7 +413,7 @@ s.onmouseleave=function(){tip.className="wxtip";};});}
 function wxBanner(){var W=window.WXDATA;if(!W)return "";
 var th=[];(W.systems||[]).forEach(function(s){(s.threats||[]).forEach(function(x){th.push(s.name+" ("+s.cat+") \u2192 "+x.port+" ~"+x.km+"km in "+x.inH+"h");});});
 if(!th.length)return "";
-return "<div class=\"crow\"><span class=\"lvl heavy\">weather</span><span class=\"ev\">\u26a0 "+th.join(" \u00b7 ")+"</span></div>";}
+return "<div class=\"crow\"><span class=\"lvl wx\">weather</span><span class=\"ev\">\u26a0 "+th.join(" \u00b7 ")+"</span></div>";}
 (function(){fetch("weather.json?t="+Date.now()).then(function(r){return r.json();}).then(function(j){window.WXDATA=j;if(window.renderCongestion)window.renderCongestion();}).catch(function(){});})();
 function computeCongestion(){
 CONGLIST=[];
