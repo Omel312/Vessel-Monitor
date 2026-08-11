@@ -177,7 +177,17 @@ td.empty2{color:#c3ccd6;text-align:center;}
   </div>
 
   <div id="notif"></div>
-  <div id="congestion"></div>
+  <div id="pcong" class="cong">
+<div class="cong-h"><span class="ico">⚓</span><span class="ti">Port congestion — trend analysis</span><span class="hint" id="pcSrc"></span></div>
+<div class="cong-body">
+<div class="pcrow"><div style="flex:1 1 100%"><div class="lbl">Port</div><div class="seg" id="pcSeg"></div></div>
+<div><div class="lbl">Range</div><div class="seg" id="pcWin"></div></div></div>
+<div id="pcStat" class="pcstat"></div>
+<div id="pcChart"></div>
+<div class="pcleg"><span><i style="background:#c98a14"></i>TEU at anchorage</span><span><i style="background:#2f6f9f"></i>TEU at port</span><span><i class="ln" style="background:#c0392b"></i>Ships at anchorage</span><span><i class="ln" style="background:#1d8a4e"></i>Ships in port</span></div>
+<div class="pcnote" id="pcNote"></div>
+</div></div>
+<div id="congestion"></div>
 
   <div class="controls">
     <div>
@@ -218,17 +228,7 @@ td.empty2{color:#c3ccd6;text-align:center;}
 
   <div id="market"></div>
 
-  <div id="pcong" class="cong">
-<div class="cong-h"><span class="ico">⚓</span><span class="ti">Port congestion — trend analysis</span><span class="hint" id="pcSrc"></span></div>
-<div class="cong-body">
-<div class="pcrow"><div style="flex:1 1 100%"><div class="lbl">Port</div><div class="seg" id="pcSeg"></div></div>
-<div><div class="lbl">Range</div><div class="seg" id="pcWin"></div></div></div>
-<div id="pcStat" class="pcstat"></div>
-<div id="pcChart"></div>
-<div class="pcleg"><span><i style="background:#c98a14"></i>TEU at anchorage</span><span><i style="background:#2f6f9f"></i>TEU at port</span><span><i class="ln" style="background:#c0392b"></i>Ships at anchorage</span><span><i class="ln" style="background:#1d8a4e"></i>Ships in port</span></div>
-<div class="pcnote" id="pcNote"></div>
-</div></div>
-<div class="note">
+  <div class="note">
     <b>How to read this.</b> Each service shows two boards: <b>Asia → US</b> and <b>US → Asia</b>, built from the <b>last regional port</b> 7 weeks ahead, so vessels already working the region appear first (furthest advanced at the top). Each card shows vessel, voyage, IMO and capacity (<b>TEU</b>). Click a sailing for its <b>full port-by-port route</b> with ETA / ETD and the <b>CY cut-off at each load port</b> (N/A where MSC publishes none). Positions and last AIS come from VesselFinder (ocean-basin precision). Roster is rebuilt from MSC's live schedule. <b>PF</b> = proforma call date per the fixed-day weekly line schedule: the purple chip under each ETA is the proforma date, the badge is actual vs proforma in days.
   </div>
 </div>
