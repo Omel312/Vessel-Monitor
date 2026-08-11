@@ -1,1 +1,81 @@
-{"updated":"11 Aug 2026, 15:00 UTC — JMA active-cyclone feed + port/terminal advisories","sources":["JMA active tropical cyclone feed (jma.go.jp)","SEKO Asia-Pacific Logistics Monitoring Center","Carrier and press advisories via web search"],"systems":[{"name":"Chan-hom","cat":"TS","pos":[35.8,139.5],"pressure":"992","threats":[{"port":"Busan","km":361,"inH":22}]},{"name":"Peilou","cat":"TS","pos":[26.6,159.5],"threats":[]},{"name":"Dolphin","cat":"TD (weakening, inland)","pos":[30,115],"threats":[]},{"name":"TD 2620","cat":"TD","pos":[21.6,140.3],"threats":[]}],"ports":{"Shanghai/Ningbo":{"status":"recovering","event":"Typhoon Dolphin","since":"11 Aug","reportedWaitLo":5,"reportedWaitHi":8,"note":"Shanghai Yangshan laden gates resumed 08:00 11 Aug, Waigaoqiao 02:00 11 Aug. Ningbo-Zhoushan laden gates resumed 16:00 10 Aug. 800+ vessels re-entering pilotage; yard density 75-90%. Reported berth wait: Shanghai 5-8 days, Ningbo 3-5 days.","source":"SEKO Asia-Pacific Logistics Monitoring Center, 11 Aug 10:00 HKT"},"Busan":{"status":"watch","event":"TS Chan-hom approaching","since":null,"reportedWaitLo":null,"reportedWaitHi":null,"note":"JMA forecast track passes ~361 km from Busan within ~22h. Anchorage already elevated (122 ships). Watch for berth suspension.","source":"JMA active tropical cyclone feed"}},"remarks":["Typhoon Dolphin has weakened to a tropical depression inland; East China terminals reopened 10-11 Aug and are in phased recovery.","TS Chan-hom is the next system to watch for Korea/Japan; no current threat to Chinese gateways.","Yantian, Xiamen and Qingdao report standard operations."]}
+{
+ "updated": "11 Aug 2026, 15:35 UTC — JMA active-cyclone feed + port/terminal advisories",
+ "sources": [
+  "JMA active tropical cyclone feed (jma.go.jp/bosai/typhoon)",
+  "SEKO Asia-Pacific Logistics Monitoring Center (updated 11 Aug 2026, 10:00 HKT)",
+  "SIPG Yangshan / Waigaoqiao terminal reopening notices via SEKO",
+  "Ningbo-Zhoushan Port Authority operational bulletins via SEKO",
+  "MSC customer advisories (no Dolphin-related closure notice as of 11 Aug)"
+ ],
+ "systems": [
+  {
+   "name": "Chan-hom",
+   "cat": "TS",
+   "pos": [
+    35.8,
+    139.5
+   ],
+   "threats": [
+    {
+     "port": "Busan",
+     "km": 361,
+     "inH": 22
+    }
+   ]
+  },
+  {
+   "name": "Peilou",
+   "cat": "TS",
+   "pos": [
+    26.6,
+    159.5
+   ],
+   "threats": []
+  },
+  {
+   "name": "Dolphin",
+   "cat": "TD",
+   "pos": [
+    30,
+    115
+   ],
+   "threats": []
+  },
+  {
+   "name": "TD 2620",
+   "cat": "TD",
+   "pos": [
+    21.6,
+    140.3
+   ],
+   "threats": []
+  }
+ ],
+ "ports": {
+  "Shanghai/Ningbo": {
+   "status": "recovering",
+   "event": "Typhoon Dolphin",
+   "since": "11 Aug",
+   "reportedWaitLo": 5,
+   "reportedWaitHi": 8,
+   "note": "Shanghai Yangshan laden gates resumed 08:00 11 Aug (empties 10:00); Waigaoqiao and domestic areas resumed 02:00 11 Aug (empties 08:00). Ningbo-Zhoushan laden gates resumed 16:00 10 Aug. Over 800 vessels anchored during the storm are re-entering pilotage; yard density 75-90%. SEKO reports berth waits of 5-8 days at Shanghai and 3-5 days at Ningbo. Some forwarder advisories cite worst-case Yangshan berth waits of up to 12 days.",
+   "source": "SEKO Asia-Pacific Logistics Monitoring Center, 11 Aug 2026 10:00 HKT"
+  },
+  "Busan": {
+   "status": "watch",
+   "event": "TS Chan-hom",
+   "since": null,
+   "reportedWaitLo": null,
+   "reportedWaitHi": null,
+   "note": "JMA forecast track brings Chan-hom to within about 361 km of Busan roughly 22 hours out as it crosses Honshu into the Sea of Japan. Terminal operations normal; no suspension announced.",
+   "source": "JMA tropical cyclone specifications feed, issued 11 Aug 2026 14:50 UTC"
+  }
+ },
+ "remarks": [
+  "Dolphin has weakened to a tropical depression over inland eastern China and is no longer within 600 km of any tracked port.",
+  "Shanghai and Ningbo terminal gates are open again; the constraint has shifted from weather to backlog clearance and yard density.",
+  "Chan-hom is the only system with a tracked port inside 600 km, and only Busan, at about 361 km on the forecast track.",
+  "Yantian, Qingdao and Xiamen are running standard operations; SEKO puts vessel waits at 2-4 days at Shenzhen and 2-3 days at Qingdao.",
+  "No MSC customer advisory has been issued for these closures."
+ ]
+}
