@@ -184,6 +184,21 @@ td.empty2{color:#c3ccd6;text-align:center;}
 .wstop{font-style:italic;color:var(--red);font-weight:700}
 .wxbad{color:var(--red);font-weight:700}
 .wxwarn{color:var(--amber);font-weight:700}
+
+#congestion{position:relative}
+.wxhit{cursor:help;border-bottom:1px dotted currentColor}
+.wxtip{position:absolute;pointer-events:none;z-index:8;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 22px rgba(16,42,67,.18);padding:11px 13px;font-size:11.5px;width:330px;opacity:0;transition:opacity .09s ease}
+.wxtip.on{opacity:1}
+.wxtip .h{display:flex;align-items:center;gap:8px;font-weight:800;color:var(--navy);font-size:12.5px;margin-bottom:8px;padding-bottom:7px;border-bottom:1px solid #eef1f5}
+.wxtip .pill{margin-left:auto;font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2.5px 8px;border-radius:20px}
+.wxtip .pill.suspended{background:#fdecea;color:var(--red)}
+.wxtip .pill.recovering{background:#fdf3e0;color:var(--amber)}
+.wxtip .pill.watch{background:#eaf1f8;color:#2f6f9f}
+.wxtip .bd{color:var(--ink);line-height:1.55}
+.wxtip .kv{display:flex;gap:10px;align-items:baseline;margin-top:8px;padding-top:7px;border-top:1px solid #eef1f5}
+.wxtip .kv em{font-style:normal;color:var(--muted)}
+.wxtip .kv b{margin-left:auto;color:var(--navy);font-weight:800}
+.wxtip .src{margin-top:8px;padding-top:7px;border-top:1px solid #eef1f5;font-size:10px;color:var(--muted);line-height:1.45}
 </style>
 </head>
 <body>
@@ -374,7 +389,26 @@ var cls=(p.status==="suspended")?"wxbad":"wxwarn";var txt;
 if(p.status==="suspended")txt="\u26d4 "+p.event+" \u2014 port suspended"+(p.since?(" since "+p.since):"");
 else if(p.status==="recovering")txt="\u26a0 "+p.event+(p.since?(" \u00b7 reopened "+p.since):"")+((p.reportedWaitLo!=null)?(" \u00b7 reported waiting "+p.reportedWaitLo+"-"+p.reportedWaitHi+" days"):"");
 else txt="\u26a0 "+p.event;
-return " \u00b7 <span class=\""+cls+"\" title=\""+String(p.note||"").replace(/"/g,"&quot;")+"\">"+txt+"</span>";}
+return " \u00b7 <span class=\""+cls+" wxhit\" data-wx=\""+nm+"\">"+txt+"</span>";}
+function wxBind(){
+var el=document.getElementById("congestion");if(!el)return;
+var tip=document.createElement("div");tip.id="wxTip";tip.className="wxtip";el.appendChild(tip);
+var W=window.WXDATA;if(!W||!W.ports)return;
+[].forEach.call(el.querySelectorAll(".wxhit"),function(s){
+s.onmousemove=function(ev){
+var p=W.ports[s.getAttribute("data-wx")];if(!p)return;
+var st=p.status||"watch";
+var h="<div class=\"h\">"+(p.event||"Weather advisory")+"<span class=\"pill "+st+"\">"+st+"</span></div>";
+h+="<div class=\"bd\">"+String(p.note||"").replace(/</g,"&lt;")+"</div>";
+if(p.reportedWaitLo!=null)h+="<div class=\"kv\"><em>Reported berth wait</em><b>"+p.reportedWaitLo+"-"+p.reportedWaitHi+" days</b></div>";
+if(p.since)h+="<div class=\"kv\"><em>"+(st==="suspended"?"Suspended since":"Reopened")+"</em><b>"+p.since+"</b></div>";
+if(p.source)h+="<div class=\"src\">Source: "+p.source+"</div>";
+tip.innerHTML=h;tip.className="wxtip on";
+var rc=el.getBoundingClientRect();
+var x=ev.clientX-rc.left+14,y=ev.clientY-rc.top+18;
+if(x+tip.offsetWidth>rc.width)x=rc.width-tip.offsetWidth-6;if(x<0)x=0;
+tip.style.left=x+"px";tip.style.top=y+"px";};
+s.onmouseleave=function(){tip.className="wxtip";};});}
 function wxBanner(){var W=window.WXDATA;if(!W)return "";
 var th=[];(W.systems||[]).forEach(function(s){(s.threats||[]).forEach(function(x){th.push(s.name+" ("+s.cat+") \u2192 "+x.port+" ~"+x.km+"km in "+x.inH+"h");});});
 if(!th.length)return "";
@@ -416,7 +450,7 @@ var tr="";
 if(c.prevQ!=null){var d=c.q-c.prevQ;if(Math.abs(d)>=0.05)tr=" <span style=\"font-weight:700;color:"+(d>0?"var(--red)":"var(--green)")+"\">"+(d>0?"\u25b2 +":"\u25bc ")+(Math.round(d*100)/100).toFixed(2)+"</span>";else tr=" <span style=\"color:var(--muted)\">\u2192 flat</span>";}
 return "<div class=\"crow\"><span class=\"lvl "+c.level+"\">"+(c.level==="heavy"?"congested":"building")+"</span><b>"+c.name+"</b><span class=\"ev\">\u2014 queue/berth <b style=\"color:var(--navy)\">"+c.q.toFixed(2)+"</b>"+tr+" \u00b7 "+IN(c.aShips)+" ships / "+K(c.aTeu)+" TEU at anchorage \u00b7 "+((c.stopped&&!wxOpen(c.name))?("<i class=\"wstop\">\u26d4 berths idle \u2014 port likely stopped</i>"):("<i class=\"wsim\">est. waiting "+(c.wLo==null?"n/a":(c.wLo===c.wHi?("~"+c.wLo+" day"+(c.wLo===1?"":"s")):(c.wLo+"-"+c.wHi+" days")))+"</i>"))+wxNote(c.name)+"</span></div>";
 }).join("");
-el.innerHTML="<div class=\"cong\"><div class=\"cong-h\"><span class=\"ico\">\u2693</span><span class=\"ti\">Port watch \u2014 congestion</span><span class=\"hint\">"+hint+"</span></div><div class=\"cong-body\">"+wxBanner()+rows+"</div></div>";
+el.innerHTML="<div class=\"cong\"><div class=\"cong-h\"><span class=\"ico\">\u2693</span><span class=\"ti\">Port watch \u2014 congestion</span><span class=\"hint\">"+hint+"</span></div><div class=\"cong-body\">"+wxBanner()+rows+"</div></div>";wxBind();
 }
 function initMap(){
   map=L.map('map',{worldCopyJump:true,minZoom:1}).setView([22,-40],2);
