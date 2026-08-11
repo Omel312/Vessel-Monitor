@@ -166,6 +166,20 @@ td.empty2{color:#c3ccd6;text-align:center;}
 #pcWin{margin-top:0}
 .pcrow{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;margin-bottom:12px}
 .pcnote{font-size:10.5px;color:var(--muted);margin-top:8px}
+
+.pcwrap{position:relative}
+.pctip{position:absolute;pointer-events:none;z-index:6;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 6px 18px rgba(16,42,67,.16);padding:10px 12px;font-size:11.5px;min-width:198px;opacity:0;transition:opacity .09s ease}
+.pctip.on{opacity:1}
+.pctip .h{font-weight:800;color:var(--navy);font-size:12px;margin-bottom:7px;padding-bottom:6px;border-bottom:1px solid #eef1f5}
+.pctip .r{display:flex;align-items:center;gap:8px;margin:4px 0;white-space:nowrap}
+.pctip .r i{width:9px;height:9px;border-radius:2px;flex:0 0 auto}
+.pctip .r i.ln{height:3px;width:13px;border-radius:2px}
+.pctip .r em{font-style:normal;color:var(--muted)}
+.pctip .r b{margin-left:auto;color:var(--navy);font-weight:700;padding-left:16px}
+.pctip .q{margin-top:7px;padding-top:6px;border-top:1px solid #eef1f5;display:flex;align-items:center}
+.pctip .q em{font-style:normal;color:var(--muted)}
+.pctip .q b{margin-left:auto;font-weight:800;color:var(--navy);padding-left:16px}
+.pctip .q b.hot{color:var(--red)}
 </style>
 </head>
 <body>
@@ -176,18 +190,18 @@ td.empty2{color:#c3ccd6;text-align:center;}
     <div class="sub">Empire · America · Lone Star Express · Chinook &nbsp;|&nbsp; data as of <b id="updated">loading…</b> &nbsp;|&nbsp; manually refreshed snapshot</div>
   </div>
 
-  <div id="notif"></div>
+  <div id="congestion"></div>
   <div id="pcong" class="cong">
 <div class="cong-h"><span class="ico">⚓</span><span class="ti">Port congestion — trend analysis</span><span class="hint" id="pcSrc"></span></div>
 <div class="cong-body">
 <div class="pcrow"><div style="flex:1 1 100%"><div class="lbl">Port</div><div class="seg" id="pcSeg"></div></div>
 <div><div class="lbl">Range</div><div class="seg" id="pcWin"></div></div></div>
 <div id="pcStat" class="pcstat"></div>
-<div id="pcChart"></div>
+<div class="pcwrap"><div id="pcChart"></div><div id="pcTip" class="pctip"></div></div>
 <div class="pcleg"><span><i style="background:#c98a14"></i>TEU at anchorage</span><span><i style="background:#2f6f9f"></i>TEU at port</span><span><i class="ln" style="background:#c0392b"></i>Ships at anchorage</span><span><i class="ln" style="background:#1d8a4e"></i>Ships in port</span></div>
 <div class="pcnote" id="pcNote"></div>
 </div></div>
-<div id="congestion"></div>
+<div id="notif"></div>
 
   <div class="controls">
     <div>
@@ -349,46 +363,35 @@ const CPORTS={
 };
 function pday(s){var M={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};var m=(s||'').match(/(\d{1,2}) (\w{3})/);return m?(M[m[2]]||0)*31+(+m[1]):null;}
 function computeCongestion(){
-  CONGLIST=[];
-  // 1) AIS dwell: unique vessels idling near a port they're heading to
-  var seen={}, wait={};
-  SVCS.forEach(svc=>{var sv=DATA[svc];if(!sv)return;['asiaOut','usOut'].forEach(d=>(sv[d]||[]).forEach(s=>{
-    if(!s.imo||seen[s.imo])return;seen[s.imo]=1;
-    var sp=parseFloat(s.spd);var area=(s.pos||'').toLowerCase();var dest=(s.dest||'').toLowerCase();
-    if(isNaN(sp)||sp>=2||(s.aisMin||0)>10080||!dest)return;            // moving, berthed, stale, or unknown dest
-    for(var code in CPORTS){var P=CPORTS[code];
-      var destMatch=P.alias.some(a=>dest.indexOf(a)>=0);
-      var nearby=P.region.some(r=>area.indexOf(r)>=0);
-      if(destMatch&&nearby){(wait[code]=wait[code]||[]).push(s.vessel+' '+s.spd);break;}
-    }
-  }));});
-  // 2) schedule drift: avg ETD change at each port vs previous snapshot
-  var prevEtd={};
-  if(PREV&&PREV.services)SVCS.forEach(svc=>{var sv=PREV.services[svc];if(!sv)return;['asiaOut','usOut'].forEach(d=>(sv[d]||[]).forEach(s=>s.route.forEach(p=>{if(CPORTS[p.code])prevEtd[s.voyage+'|'+p.code]=pday(p.etd);})));});
-  var slipAgg={};
-  SVCS.forEach(svc=>{var sv=DATA[svc];if(!sv)return;['asiaOut','usOut'].forEach(d=>(sv[d]||[]).forEach(s=>s.route.forEach(p=>{
-    if(!CPORTS[p.code])return;var pv=prevEtd[s.voyage+'|'+p.code];var cv=pday(p.etd);
-    if(pv!=null&&cv!=null){(slipAgg[p.code]=slipAgg[p.code]||[]).push(cv-pv);}
-  })));});
-  for(var code in CPORTS){
-    var w=(wait[code]||[]).length;
-    var arr=slipAgg[code]||[];var slip=arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0;
-    var level=(w>=1||slip>=1.5)?'heavy':(slip>=0.5?'building':'normal');
-    if(level==='normal')continue;
-    var parts=[];
-    if(w)parts.push(w+' vessel'+(w>1?'s':'')+' idling near port ('+(wait[code]).join(', ')+')');
-    if(slip>=0.5)parts.push('schedule drift +'+slip.toFixed(1)+' day'+(slip>=1.5?'s':''));
-    CONGLIST.push({code:code,name:CPORTS[code].name,level:level,w:w,slip:slip,ev:parts.join(' · ')||'minor signal'});
-  }
-  CONGLIST.sort((a,b)=>(b.w-a.w)||(b.slip-a.slip));
+CONGLIST=[];
+var C=window.CONGDATA;
+if(!C||!C.ports)return;
+C.ports.forEach(function(p){
+var last=null,prev=null;
+for(var i=p.rows.length-1;i>=0;i--){var r=p.rows[i];if(r[5]==null)continue;if(!last){last=r;}else{prev=r;break;}}
+if(!last)return;
+var q=last[5];
+if(!(q>1.5))return;
+CONGLIST.push({name:p.name,q:q,prevQ:prev?prev[5]:null,aShips:last[1],aTeu:last[3],pShips:last[2],date:last[0],level:(q>=2.5?"heavy":"building")});
+});
+CONGLIST.sort(function(a,b){return b.q-a.q;});
 }
 function renderCongestion(){
-  var el=document.getElementById('congestion');
-  if(!CONGLIST.length){el.innerHTML=`<div class="cong"><div class="cong-h"><span class="ico">⚓</span><span class="ti">Port watch — congestion</span><span class="ok">No congestion signals in the current fleet snapshot</span></div></div>`;return;}
-  var rows=CONGLIST.map(c=>`<div class="crow"><span class="lvl ${c.level}">${c.level==='heavy'?'congested':'building'}</span><b>${c.name}</b><span class="ev">— ${c.ev}</span></div>`).join('');
-  el.innerHTML=`<div class="cong"><div class="cong-h"><span class="ico">⚓</span><span class="ti">Port watch — congestion</span><span class="hint">from fleet AIS dwell + schedule drift</span></div><div class="cong-body">${rows}</div></div>`;
+var el=document.getElementById("congestion");if(!el)return;
+var C=window.CONGDATA;
+function K(v){return v==null?"\u2014":(v>=1000?((Math.round(v/100)/10).toFixed(1)+"K"):String(Math.round(v)));}
+function IN(v){return v==null?"\u2014":String(Math.round(v));}
+function MD(d){if(!d)return "";var P=d.split("-");var M=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];return (+P[2])+" "+M[+P[1]-1];}
+if(!C){el.innerHTML="";return;}
+var hint="Linerlytica queue-to-berth ratio \u00b7 flagged above 1.5 \u00b7 as at "+MD(C.asOf);
+if(!CONGLIST.length){el.innerHTML="<div class=\"cong\"><div class=\"cong-h\"><span class=\"ico\">\u2693</span><span class=\"ti\">Port watch \u2014 congestion</span><span class=\"ok\">No tracked port above a 1.5 queue-to-berth ratio</span></div><div class=\"cong-body\"><div class=\"crow\" style=\"color:var(--muted)\">"+hint+"</div></div></div>";return;}
+var rows=CONGLIST.map(function(c){
+var tr="";
+if(c.prevQ!=null){var d=c.q-c.prevQ;if(Math.abs(d)>=0.05)tr=" <span style=\"font-weight:700;color:"+(d>0?"var(--red)":"var(--green)")+"\">"+(d>0?"\u25b2 +":"\u25bc ")+(Math.round(d*100)/100).toFixed(2)+"</span>";else tr=" <span style=\"color:var(--muted)\">\u2192 flat</span>";}
+return "<div class=\"crow\"><span class=\"lvl "+c.level+"\">"+(c.level==="heavy"?"congested":"building")+"</span><b>"+c.name+"</b><span class=\"ev\">\u2014 queue/berth <b style=\"color:var(--navy)\">"+c.q.toFixed(2)+"</b>"+tr+" \u00b7 "+IN(c.aShips)+" ships / "+K(c.aTeu)+" TEU at anchorage \u00b7 "+IN(c.pShips)+" ships in port</span></div>";
+}).join("");
+el.innerHTML="<div class=\"cong\"><div class=\"cong-h\"><span class=\"ico\">\u2693</span><span class=\"ti\">Port watch \u2014 congestion</span><span class=\"hint\">"+hint+"</span></div><div class=\"cong-body\">"+rows+"</div></div>";
 }
-
 function initMap(){
   map=L.map('map',{worldCopyJump:true,minZoom:1}).setView([22,-40],2);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
@@ -727,65 +730,100 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 <script>
 (function(){
 var C={aTeu:"#c98a14",pTeu:"#2f6f9f",aShips:"#c0392b",pShips:"#1d8a4e"};
-var PC=null,SEL=0,WIN=30;
+var PC=null,SEL=0,WIN=30,GEO=null;
 var WINS=[[30,"30 days"],[90,"90 days"],[0,"All"]];
 var MM=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var DD=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 function fd(d){var p=d.split("-");return (+p[2])+" "+MM[+p[1]-1];}
 function fdy(d){var p=d.split("-");return (+p[2])+" "+MM[+p[1]-1]+" "+String(p[0]).slice(2);}
-function nf(n){return n==null?"\u2014":Math.round(n).toLocaleString("en-US");}
-function n1(n){return n==null?"\u2014":(Math.round(n*10)/10).toLocaleString("en-US",{minimumFractionDigits:1,maximumFractionDigits:1});}
+function fdl(d){var p=d.split("-");var dt=new Date(Date.UTC(+p[0],+p[1]-1,+p[2]));return DD[dt.getUTCDay()]+" "+(+p[2])+" "+MM[+p[1]-1]+" "+p[0];}
+function ni(n){return n==null?"\u2014":Math.round(n).toLocaleString("en-US");}
+function K(n){if(n==null)return "\u2014";if(n>=1000){var v=Math.round(n/100)/10;return (v===Math.floor(v)?String(v):v.toFixed(1))+"K";}return String(Math.round(n));}
 function n2(n){return n==null?"\u2014":(Math.round(n*100)/100).toFixed(2);}
 function nice(m){if(m<=0)return 1;var e=Math.pow(10,Math.floor(Math.log(m)/Math.LN10));var f=m/e;var A=[1,1.2,1.5,2,2.5,3,4,5,6,8,10],i;for(i=0;i<A.length;i++){if(f<=A[i]+1e-9)return A[i]*e;}return 10*e;}
-function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function win(p){return (WIN>0&&p.rows.length>WIN)?p.rows.slice(-WIN):p.rows;}
 function chart(rows){
 var n=rows.length;if(!n)return "";
-var W=980,H=380,L=68,R=54,T=28,B=52;var pw=W-L-R,ph=H-T-B;
+var W=980,H=392,L=70,R=56,T=34,B=52;var pw=W-L-R,ph=H-T-B;
 var maxT=0,maxS=0;rows.forEach(function(r){if(r[3]>maxT)maxT=r[3];if(r[4]>maxT)maxT=r[4];if(r[1]>maxS)maxS=r[1];if(r[2]>maxS)maxS=r[2];});
-var yT=nice(maxT*1.04)||1,yS=nice(maxS*1.06)||1;
-var slot=pw/n,bw=Math.max(1.2,Math.min(17,slot*0.34)),gap=n>60?0:1;
+var yT=nice(maxT*1.10)||1,yS=nice(maxS*1.14)||1;
+var slot=pw/n,bw=Math.max(1.2,Math.min(16,slot*0.32)),gap=n>60?0:1;
+GEO={n:n,W:W,L:L,T:T,pw:pw,ph:ph,slot:slot};
 function cx(i){return L+slot*(i+0.5);}
 function yTeu(v){return T+ph-(v/yT)*ph;}
 function ySh(v){return T+ph-(v/yS)*ph;}
 var s="<svg viewBox=\"0 0 "+W+" "+H+"\" xmlns=\"http://www.w3.org/2000/svg\">";
 var G=5,i,g;
 for(g=0;g<=G;g++){var yy=T+ph-(ph*g/G);s+="<line x1=\""+L+"\" y1=\""+yy.toFixed(1)+"\" x2=\""+(L+pw)+"\" y2=\""+yy.toFixed(1)+"\" stroke=\"#eef1f5\" stroke-width=\"1\"/>";
-s+="<text x=\""+(L-9)+"\" y=\""+(yy+3.5).toFixed(1)+"\" text-anchor=\"end\" font-size=\"10\" fill=\"#5d6b7d\">"+nf(yT*g/G)+"</text>";
-s+="<text x=\""+(L+pw+9)+"\" y=\""+(yy+3.5).toFixed(1)+"\" text-anchor=\"start\" font-size=\"10\" fill=\"#5d6b7d\">"+n1(yS*g/G)+"</text>";}
+s+="<text x=\""+(L-9)+"\" y=\""+(yy+3.5).toFixed(1)+"\" text-anchor=\"end\" font-size=\"10\" fill=\"#5d6b7d\">"+K(yT*g/G)+"</text>";
+s+="<text x=\""+(L+pw+9)+"\" y=\""+(yy+3.5).toFixed(1)+"\" text-anchor=\"start\" font-size=\"10\" fill=\"#5d6b7d\">"+ni(yS*g/G)+"</text>";}
 s+="<line x1=\""+L+"\" y1=\""+(T+ph)+"\" x2=\""+(L+pw)+"\" y2=\""+(T+ph)+"\" stroke=\"#c9d3de\" stroke-width=\"1\"/>";
+var showBarLbl=slot>=22,showShipLbl=slot>=24;
 for(i=0;i<n;i++){var xa=cx(i)-bw-gap/2,xb=cx(i)+gap/2;
-var ha=(rows[i][3]==null)?0:ph-(yTeu(rows[i][3])-T),hb=(rows[i][4]==null)?0:ph-(yTeu(rows[i][4])-T);
-s+="<rect x=\""+xa.toFixed(1)+"\" y=\""+yTeu(rows[i][3]||0).toFixed(1)+"\" width=\""+bw.toFixed(1)+"\" height=\""+Math.max(0,ha).toFixed(1)+"\" fill=\""+C.aTeu+"\"/>";
-s+="<rect x=\""+xb.toFixed(1)+"\" y=\""+yTeu(rows[i][4]||0).toFixed(1)+"\" width=\""+bw.toFixed(1)+"\" height=\""+Math.max(0,hb).toFixed(1)+"\" fill=\""+C.pTeu+"\"/>";}
-function poly(idx,col){var pts=[],j;for(j=0;j<n;j++){if(rows[j][idx]==null)continue;pts.push(cx(j).toFixed(1)+","+ySh(rows[j][idx]).toFixed(1));}
+var va=rows[i][3],vb=rows[i][4];
+var ya=yTeu(va||0),yb=yTeu(vb||0);
+if(va!=null)s+="<rect x=\""+xa.toFixed(1)+"\" y=\""+ya.toFixed(1)+"\" width=\""+bw.toFixed(1)+"\" height=\""+Math.max(0,T+ph-ya).toFixed(1)+"\" fill=\""+C.aTeu+"\"/>";
+if(vb!=null)s+="<rect x=\""+xb.toFixed(1)+"\" y=\""+yb.toFixed(1)+"\" width=\""+bw.toFixed(1)+"\" height=\""+Math.max(0,T+ph-yb).toFixed(1)+"\" fill=\""+C.pTeu+"\"/>";
+if(showBarLbl){
+if(va!=null){var px=(xa+bw/2).toFixed(1),py=(ya-4).toFixed(1);s+="<text x=\""+px+"\" y=\""+py+"\" transform=\"rotate(-90 "+px+" "+py+")\" text-anchor=\"start\" font-size=\"8.5\" font-weight=\"700\" fill=\""+C.aTeu+"\" stroke=\"#ffffff\" stroke-width=\"2.4\" paint-order=\"stroke\">"+K(va)+"</text>";}
+if(vb!=null){var qx=(xb+bw/2).toFixed(1),qy=(yb-4).toFixed(1);s+="<text x=\""+qx+"\" y=\""+qy+"\" transform=\"rotate(-90 "+qx+" "+qy+")\" text-anchor=\"start\" font-size=\"8.5\" font-weight=\"700\" fill=\""+C.pTeu+"\" stroke=\"#ffffff\" stroke-width=\"2.4\" paint-order=\"stroke\">"+K(vb)+"</text>";}}}
+function poly(idx,col,lblDy){var pts=[],j;for(j=0;j<n;j++){if(rows[j][idx]==null)continue;pts.push(cx(j).toFixed(1)+","+ySh(rows[j][idx]).toFixed(1));}
 var o="<polyline fill=\"none\" stroke=\""+col+"\" stroke-width=\"2\" stroke-linejoin=\"round\" stroke-linecap=\"round\" points=\""+pts.join(" ")+"\"/>";
-if(n<=45){for(j=0;j<n;j++){if(rows[j][idx]==null)continue;o+="<circle cx=\""+cx(j).toFixed(1)+"\" cy=\""+ySh(rows[j][idx]).toFixed(1)+"\" r=\"2.8\" fill=\"#fff\" stroke=\""+col+"\" stroke-width=\"1.8\"/>";}}return o;}
-s+=poly(2,C.pShips);s+=poly(1,C.aShips);
+if(n<=45){for(j=0;j<n;j++){if(rows[j][idx]==null)continue;o+="<circle cx=\""+cx(j).toFixed(1)+"\" cy=\""+ySh(rows[j][idx]).toFixed(1)+"\" r=\"2.8\" fill=\"#fff\" stroke=\""+col+"\" stroke-width=\"1.8\"/>";}}
+if(showShipLbl){for(j=0;j<n;j++){if(rows[j][idx]==null)continue;o+="<text x=\""+cx(j).toFixed(1)+"\" y=\""+(ySh(rows[j][idx])+lblDy).toFixed(1)+"\" text-anchor=\"middle\" font-size=\"8.5\" font-weight=\"700\" fill=\""+col+"\" stroke=\"#ffffff\" stroke-width=\"2.6\" paint-order=\"stroke\" stroke-linejoin=\"round\">"+ni(rows[j][idx])+"</text>";}}
+return o;}
+s+=poly(2,C.pShips,14);s+=poly(1,C.aShips,-7);
 var step=Math.max(1,Math.ceil(n/11));
 for(i=0;i<n;i++){if(i%step!==0&&i!==n-1)continue;s+="<text x=\""+cx(i).toFixed(1)+"\" y=\""+(T+ph+18)+"\" text-anchor=\"middle\" font-size=\"10\" fill=\"#5d6b7d\">"+fd(rows[i][0])+"</text>";}
-s+="<text x=\""+(L-9)+"\" y=\""+(T-14)+"\" text-anchor=\"end\" font-size=\"9.5\" font-weight=\"700\" fill=\"#5d6b7d\">TEU</text>";
-s+="<text x=\""+(L+pw+9)+"\" y=\""+(T-14)+"\" text-anchor=\"start\" font-size=\"9.5\" font-weight=\"700\" fill=\"#5d6b7d\">SHIPS</text>";
-if(n<=120){for(i=0;i<n;i++){var r=rows[i];var tip=fdy(r[0])+"\nShips at anchorage: "+n1(r[1])+"\nShips in port: "+n1(r[2])+"\nTEU at anchorage: "+nf(r[3])+"\nTEU at port: "+nf(r[4])+"\nQueue/berth ratio: "+n2(r[5]);
-s+="<rect x=\""+(L+slot*i).toFixed(1)+"\" y=\""+T+"\" width=\""+slot.toFixed(1)+"\" height=\""+ph+"\" fill=\"transparent\"><title>"+esc(tip)+"</title></rect>";}}
+s+="<text x=\""+(L-9)+"\" y=\""+(T-16)+"\" text-anchor=\"end\" font-size=\"9.5\" font-weight=\"700\" fill=\"#5d6b7d\">TEU</text>";
+s+="<text x=\""+(L+pw+9)+"\" y=\""+(T-16)+"\" text-anchor=\"start\" font-size=\"9.5\" font-weight=\"700\" fill=\"#5d6b7d\">SHIPS</text>";
+s+="<line id=\"pcGuide\" x1=\"0\" y1=\""+T+"\" x2=\"0\" y2=\""+(T+ph)+"\" stroke=\"#0b2942\" stroke-width=\"1\" stroke-dasharray=\"3 3\" opacity=\"0\"/>";
 s+="</svg>";return s;}
-function delta(a,b){if(a==null||b==null)return "";var d=b-a;if(Math.abs(d)<0.05)return "<span class=\"d fl\">flat</span>";
-return "<span class=\"d "+(d>0?"up":"dn")+"\">"+(d>0?"+":"")+(Math.abs(d)>=100?nf(d):n1(d))+"</span>";}
+function delta(a,b,fmt){if(a==null||b==null)return "";var d=b-a;if(Math.abs(d)<0.05)return "<span class=\"d fl\">flat</span>";
+return "<span class=\"d "+(d>0?"up":"dn")+"\">"+(d>0?"+":"-")+fmt(Math.abs(d))+"</span>";}
 function stats(rows){var f=rows[0],l=rows[rows.length-1];
 function box(k,v,d){return "<div class=\"s\"><div class=\"k\">"+k+"</div><div class=\"v\">"+v+d+"</div></div>";}
-return box("Ships at anchorage",n1(l[1]),delta(f[1],l[1]))+box("Ships in port",n1(l[2]),delta(f[2],l[2]))
-+box("TEU at anchorage",nf(l[3]),delta(f[3],l[3]))+box("TEU at port",nf(l[4]),delta(f[4],l[4]))
-+box("Queue / berth",n2(l[5]),delta(f[5],l[5]));}
+return box("Ships at anchorage",ni(l[1]),delta(f[1],l[1],ni))+box("Ships in port",ni(l[2]),delta(f[2],l[2],ni))
++box("TEU at anchorage",K(l[3]),delta(f[3],l[3],K))+box("TEU at port",K(l[4]),delta(f[4],l[4],K))
++box("Queue / berth",n2(l[5]),delta(f[5],l[5],n2));}
+function tipHtml(r){
+var q=r[5];var hot=(q!=null&&q>1.5);
+return "<div class=\"h\">"+fdl(r[0])+"</div>"
++"<div class=\"r\"><i style=\"background:"+C.aTeu+"\"></i><em>TEU at anchorage</em><b>"+K(r[3])+"</b></div>"
++"<div class=\"r\"><i style=\"background:"+C.pTeu+"\"></i><em>TEU at port</em><b>"+K(r[4])+"</b></div>"
++"<div class=\"r\"><i class=\"ln\" style=\"background:"+C.aShips+"\"></i><em>Ships at anchorage</em><b>"+ni(r[1])+"</b></div>"
++"<div class=\"r\"><i class=\"ln\" style=\"background:"+C.pShips+"\"></i><em>Ships in port</em><b>"+ni(r[2])+"</b></div>"
++"<div class=\"q\"><em>Queue / berth ratio</em><b class=\""+(hot?"hot":"")+"\">"+n2(q)+(hot?" \u26a0":"")+"</b></div>";}
+function bindTip(rows){
+var wrap=document.querySelector(".pcwrap"),tip=document.getElementById("pcTip");if(!wrap||!tip||!GEO)return;
+var svg=wrap.querySelector("svg");var guide=svg?svg.querySelector("#pcGuide"):null;
+wrap.onmousemove=function(ev){
+var rc=wrap.getBoundingClientRect();var sc=GEO.W/rc.width;
+var vx=(ev.clientX-rc.left)*sc;
+var i=Math.floor((vx-GEO.L)/GEO.slot);
+if(i<0||i>=GEO.n||vx<GEO.L||vx>GEO.L+GEO.pw){tip.className="pctip";if(guide)guide.setAttribute("opacity","0");return;}
+var r=rows[i];if(!r||r[1]==null&&r[3]==null){tip.className="pctip";return;}
+tip.innerHTML=tipHtml(r);tip.className="pctip on";
+if(guide){var gx=GEO.L+GEO.slot*(i+0.5);guide.setAttribute("x1",gx);guide.setAttribute("x2",gx);guide.setAttribute("opacity","0.28");}
+var tw=tip.offsetWidth,th=tip.offsetHeight;
+var px=ev.clientX-rc.left+14;if(px+tw>rc.width)px=ev.clientX-rc.left-tw-14;if(px<0)px=0;
+var py=ev.clientY-rc.top-th-12;if(py<0)py=ev.clientY-rc.top+16;
+tip.style.left=px+"px";tip.style.top=py+"px";};
+wrap.onmouseleave=function(){tip.className="pctip";if(guide)guide.setAttribute("opacity","0");};}
 function draw(){var p=PC.ports[SEL];var rw=win(p);
 document.getElementById("pcChart").innerHTML=chart(rw);document.getElementById("pcStat").innerHTML=stats(rw);
+bindTip(rw);
 var b=document.getElementById("pcSeg").children,i;for(i=0;i<b.length;i++)b[i].className=(i===SEL?"active":"");
 var w=document.getElementById("pcWin").children;for(i=0;i<w.length;i++)w[i].className=(WINS[i][0]===WIN?"active":"");
-document.getElementById("pcNote").innerHTML="Source: Linerlytica \u00b7 showing "+fdy(rw[0][0])+" \u2192 "+fdy(rw[rw.length-1][0])+" ("+rw.length+" of "+p.rows.length+" stored daily snapshots) \u00b7 bars read on the left axis (TEU), lines on the right (ships)"+(rw.length<=120?" \u00b7 hover any day for the full figures":"")+".";}
+document.getElementById("pcNote").innerHTML="Source: Linerlytica \u00b7 showing "+fdy(rw[0][0])+" \u2192 "+fdy(rw[rw.length-1][0])+" ("+rw.length+" of "+p.rows.length+" stored daily snapshots) \u00b7 bars read on the left axis (TEU, thousands), lines on the right (ships) \u00b7 hover the chart for a full breakdown.";}
 function init(){var seg=document.getElementById("pcSeg");seg.innerHTML="";
 PC.ports.forEach(function(p,i){var bt=document.createElement("button");bt.textContent=p.name;bt.onclick=function(){SEL=i;draw();};seg.appendChild(bt);});
 var ws=document.getElementById("pcWin");ws.innerHTML="";
 WINS.forEach(function(x){var bt=document.createElement("button");bt.textContent=x[1];bt.onclick=function(){WIN=x[0];draw();};ws.appendChild(bt);});
 document.getElementById("pcSrc").textContent="as at "+fd(PC.asOf)+" \u00b7 linerlytica.com";draw();}
-function boot(j){PC=j;if(!PC||!PC.ports||!PC.ports.length||!PC.ports[0].rows.length){document.getElementById("pcong").style.display="none";return;}init();}
+function boot(j){PC=j;if(!PC||!PC.ports||!PC.ports.length||!PC.ports[0].rows.length){document.getElementById("pcong").style.display="none";return;}
+window.CONGDATA=PC;try{if(window.computeCongestion)window.computeCongestion();if(window.renderCongestion)window.renderCongestion();}catch(e){}
+init();}
 if(window.__CONGPRE){boot(window.__CONGPRE);}else{fetch("congestion.json?t="+Date.now()).then(function(r){return r.json();}).then(boot).catch(function(){document.getElementById("pcong").style.display="none";});}
 })();
 </script>
