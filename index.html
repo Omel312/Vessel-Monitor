@@ -384,11 +384,12 @@ const CPORTS={
 function pday(s){var M={Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};var m=(s||'').match(/(\d{1,2}) (\w{3})/);return m?(M[m[2]]||0)*31+(+m[1]):null;}
 
 function wxOpen(nm){var W=window.WXDATA;if(!W||!W.ports||!W.ports[nm])return false;var s=W.ports[nm].status;return (s==="recovering"||s==="open");}
+function wxRep(nm){var W=window.WXDATA;if(!W||!W.ports||!W.ports[nm])return null;var p=W.ports[nm];if(p.waitLabel)return String(p.waitLabel);if(p.reportedWaitLo!=null)return p.reportedWaitLo+"-"+p.reportedWaitHi+" days";return null;}
 function wxNote(nm){
 var W=window.WXDATA;if(!W||!W.ports||!W.ports[nm])return "";var p=W.ports[nm];
 var cls=(p.status==="suspended")?"wxbad":"wxwarn";var txt;
 if(p.status==="suspended")txt="\u26d4 "+p.event+" \u2014 port suspended"+(p.since?(" since "+p.since):"");
-else if(p.status==="recovering")txt="\u26a0 "+p.event+(p.since?(" \u00b7 reopened "+p.since):"")+((p.reportedWaitLo!=null)?(" \u00b7 reported waiting "+p.reportedWaitLo+"-"+p.reportedWaitHi+" days"):"");
+else if(p.status==="recovering")txt="\u26a0 "+p.event+(p.since?(" \u00b7 reopened "+p.since):"");
 else txt="\u26a0 "+p.event;
 return " \u00b7 <span class=\""+cls+" wxhit\" data-wx=\""+nm+"\">"+txt+"</span>";}
 function wxBind(){
@@ -401,7 +402,7 @@ var p=W.ports[s.getAttribute("data-wx")];if(!p)return;
 var st=p.status||"watch";
 var h="<div class=\"h\">"+(p.event||"Weather advisory")+"<span class=\"pill "+st+"\">"+st+"</span></div>";
 h+="<div class=\"bd\">"+String(p.note||"").replace(/</g,"&lt;")+"</div>";
-if(p.reportedWaitLo!=null)h+="<div class=\"kv\"><em>Reported berth wait</em><b>"+p.reportedWaitLo+"-"+p.reportedWaitHi+" days</b></div>";
+if(p.waitLabel||p.reportedWaitLo!=null)h+="<div class=\"kv\"><em>Reported berth wait</em><b>"+(p.waitLabel?p.waitLabel:(p.reportedWaitLo+"-"+p.reportedWaitHi+" days"))+"</b></div>";
 if(p.since)h+="<div class=\"kv\"><em>"+(st==="suspended"?"Suspended since":"Reopened")+"</em><b>"+p.since+"</b></div>";
 if(p.source)h+="<div class=\"src\">Source: "+p.source+"</div>";
 tip.innerHTML=h;tip.className="wxtip on";
@@ -451,7 +452,7 @@ var tr="";
 if(c.prevQ!=null){var d=c.q-c.prevQ;if(Math.abs(d)>=0.05)tr=" <span style=\"font-weight:700;color:"+(d>0?"var(--red)":"var(--green)")+"\">"+(d>0?"\u25b2 +":"\u25bc ")+(Math.round(d*100)/100).toFixed(2)+"</span>";else tr=" <span style=\"color:var(--muted)\">\u2192 flat</span>";}
 return "<div class=\"crow\"><span class=\"lvl "+c.level+"\">"+(c.level==="heavy"?"congested":"building")+"</span><b>"+c.name+"</b><span class=\"ev\">\u2014 queue/berth <b style=\"color:var(--navy)\">"+c.q.toFixed(2)+"</b>"+tr+" \u00b7 "+IN(c.aShips)+" ships / "+K(c.aTeu)+" TEU at anchorage \u00b7 "+((c.stopped&&!wxOpen(c.name))?("<i class=\"wstop\">\u26d4 berths idle \u2014 port likely stopped</i>"):("<i class=\"wsim\">est. waiting "+(c.wLo==null?"n/a":(c.wLo===c.wHi?("~"+c.wLo+" day"+(c.wLo===1?"":"s")):(c.wLo+"-"+c.wHi+" days")))+"</i>"))+wxNote(c.name)+"</span></div>";
 }).join("");
-el.innerHTML="<div class=\"cong\"><div class=\"cong-h\"><span class=\"ico\">\u2693</span><span class=\"ti\">Port watch \u2014 congestion</span><span class=\"hint\">"+hint+"</span></div><div class=\"cong-body\">"+wxBanner()+rows+"</div></div>";wxBind();
+el.innerHTML="<div class=\"cong\"><div class=\"cong-h\"><span class=\"ico\">\u2693</span><span class=\"ti\">Port watch \u2014 congestion</span><span class=\"hint\">"+hint+"</span></div><div class=\"cong-body\">"+wxBanner()+rows+"</div></div>";wxBind();[].forEach.call(el.querySelectorAll(".crow"),function(rw){var nb=rw.querySelector("b");var ws=rw.querySelector(".wsim");if(nb&&ws){var rep=wxRep(nb.textContent);if(rep)ws.textContent="reported waiting "+rep;}});
 }
 function initMap(){
   map=L.map('map',{worldCopyJump:true,minZoom:1}).setView([22,-40],2);
