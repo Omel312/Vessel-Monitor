@@ -201,6 +201,7 @@ td.empty2{color:#c3ccd6;text-align:center;}
 .wxtip .kv b{margin-left:auto;color:var(--navy);font-weight:800}
 .wxtip .src{margin-top:8px;padding-top:7px;border-top:1px solid #eef1f5;font-size:10px;color:var(--muted);line-height:1.45}
 </style>
+<style>.xlcard{border:1px solid #ddd;border-left:4px solid #b23;border-radius:6px;padding:10px 12px;margin-bottom:10px;background:#fff}.xlunver{opacity:.6;border-left-color:#999;background:#fafafa}.xlhead{font-size:14px;margin-bottom:4px}.xlal{opacity:.7}.xlflag{background:#999;color:#fff;font-size:10px;padding:1px 5px;border-radius:3px}.xlrot{font-size:12px;opacity:.85;margin-bottom:4px}.xlves{font-size:12px;font-weight:600;margin-bottom:6px}.xlsch{margin-bottom:6px}.xlpill{display:inline-block;background:#f0f0f0;border-radius:3px;padding:2px 6px;margin:0 4px 4px 0;font-size:11px}.xltr{font-size:11px;opacity:.8}.xlvs{font-size:11px;margin-top:4px;color:#b23;font-weight:600}.xlnote{font-size:11px;opacity:.7;margin-top:4px;font-style:italic}</style>
 </head>
 <body>
 <div class="wrap">
@@ -261,6 +262,7 @@ td.empty2{color:#c3ccd6;text-align:center;}
   </div>
 
   <div id="market"></div>
+  <div id="xloaders"></div>
 
   <div class="note">
     <b>How to read this.</b> Each service shows two boards: <b>Asia → US</b> and <b>US → Asia</b>, built from the <b>last regional port</b> 7 weeks ahead, so vessels already working the region appear first (furthest advanced at the top). Each card shows vessel, voyage, IMO and capacity (<b>TEU</b>). Click a sailing for its <b>full port-by-port route</b> with ETA / ETD and the <b>CY cut-off at each load port</b> (N/A where MSC publishes none). Positions and last AIS come from VesselFinder (ocean-basin precision). Roster is rebuilt from MSC's live schedule. <b>PF</b> = proforma call date per the fixed-day weekly line schedule: the purple chip under each ETA is the proforma date, the badge is actual vs proforma in days.
@@ -663,7 +665,34 @@ function curAll(){
 }
 const PGRP={"New York":"New York / Newark","Newark":"New York / Newark","Vung Tau":"Vung Tau / Cai Mep","Cai Mep":"Vung Tau / Cai Mep","Miami":"Miami / Port Everglades","Port Everglades":"Miami / Port Everglades"};const pn=p=>PGRP[p]||p;const vteu=x=>(x&&(x.teu||(MKT&&MKT.vesselTeu&&MKT.vesselTeu[x.vessel])))||0;
 function mkActivePort(s){ if(mAsia!=='ALL'){var kk=Object.keys(s.ports).filter(k=>pn(k)===mAsia||k===mAsia);return kk.length?kk[0]:null;} var k=Object.keys(s.ports); return k.length?k.reduce(function(b,c){return Math.max.apply(null,s.ports[c].map(function(x){return x.week}))>Math.max.apply(null,s.ports[b].map(function(x){return x.week}))?c:b;},k[0]):null; }
-function renderMarket(){
+function renderXL(){
+  var el=document.getElementById("xloaders"); if(!el)return;
+  var M=(typeof MKT!=="undefined")?MKT:null;
+  var XL=(M&&M.extraLoaders)||null;
+  var items=(XL&&XL.items)||[];
+  if(!items.length){el.innerHTML="";return;}
+  var rows=items.map(function(x){
+    var rot=(x.asia||[]).join(" \u2192 ")+"  \u21d2  "+(x.us||[]).join(" \u2192 ");
+    var sch=(x.schedule||[]).map(function(s){return "<span class=\"xlpill\">"+s.port+" "+(s.etd?("ETD "+s.etd):("ETA "+s.eta))+"</span>";}).join("");
+    var tr="";
+    if(x.transit){tr=Object.keys(x.transit).map(function(a){var us=x.transit[a];return "<div class=\"xltr\"><b>"+a+"</b>: "+Object.keys(us).map(function(u){return u+" "+us[u]+"d";}).join(", ")+"</div>";}).join("");}
+    var vp="";
+    if(x.vsProforma){var d=x.vsProforma.deltaDaysToNewYork||{};var parts=Object.keys(d).map(function(k){var v=d[k];return k+" "+(v>0?"+":"")+v+"d";});
+      vp="<div class=\"xlvs\">vs "+x.vsProforma.svc+(parts.length?(" \u2014 to New York: "+parts.join(", ")):"")+"</div>";}
+    var un=x.verified?"":" xlunver";
+    var note=x.note?("<div class=\"xlnote\">"+x.note+"</div>"):"";
+    var teu=x.teu?(x.teu.toLocaleString()+" TEU"):"TEU n/a";
+    return "<div class=\"xlcard"+un+"\"><div class=\"xlhead\"><b>"+x.svc+"</b> \u00b7 "+(x.carriers||[]).join(" + ")+" \u00b7 <span class=\"xlal\">"+(x.alliance||"")+"</span>"+(x.verified?"":" <span class=\"xlflag\">UNVERIFIED</span>")+"</div>"
+      +"<div class=\"xlrot\">"+rot+"</div>"
+      +"<div class=\"xlves\">"+x.vessel+(x.imo?(" (IMO "+x.imo+")"):"")+" \u00b7 "+teu+"</div>"
+      +"<div class=\"xlsch\">"+sch+"</div>"+tr+vp+note+"</div>";
+  }).join("");
+  el.innerHTML="<div class=\"card\" style=\"margin-top:14px\"><h3 style=\"margin:0 0 4px\">Extra Loaders</h3>"
+    +"<div style=\"font-size:12px;opacity:.75;margin-bottom:10px\">Additional, occasional sailings run outside the regular proforma services. As of "+((XL&&XL.asOf)||"")+".</div>"
+    +rows+"</div>";
+}
+function renderMarket(){ try{renderXL();}catch(e){}
+
   const el=document.getElementById('market'); if(!el)return;
   const A=curAll(); if(!MKT||!A){el.innerHTML='';return;}
   const carrier=mAlliance==='Gemini'?'Maersk':(mAlliance==='ALL'?'Maersk + CMA CGM':'CMA CGM');
