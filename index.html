@@ -132,10 +132,10 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,Bl
 .mkt .sub2{font-size:11.5px;color:var(--muted);margin-bottom:12px;line-height:1.5;}
 .mkt-filt{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px;}
 .mkt-filt .seg button[disabled]{opacity:.4;cursor:not-allowed;}
-.mkt-scroll{overflow-x:auto;}
+.mkt-scroll{overflow:visible;}@media (max-width:860px){.mkt-scroll{overflow-x:auto;}}
 table.mgrid{border-collapse:collapse;width:100%;font-size:11.5px;min-width:780px;}
 table.mgrid th,table.mgrid td{border:1px solid var(--line);padding:6px 7px;vertical-align:top;text-align:left;}
-table.mgrid thead th{background:var(--navy);color:#fff;font-weight:700;text-align:center;white-space:nowrap;font-size:11px;}
+table.mgrid thead th{background:var(--navy);color:#fff;font-weight:700;text-align:center;white-space:nowrap;font-size:11px;}table.mgrid thead th{position:sticky;top:0;z-index:5;box-shadow:inset 0 1px 0 var(--line),inset 0 -1px 0 var(--line);}
 table.mgrid th.lane{background:var(--navy2);text-align:left;min-width:150px;}
 table.mgrid td.lane{background:#f7f9fb;font-weight:700;color:var(--navy);}
 table.mgrid td.lane .svc2{display:block;font-weight:600;color:var(--muted);font-size:10px;margin-top:2px;}
