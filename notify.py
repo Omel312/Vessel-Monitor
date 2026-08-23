@@ -375,7 +375,7 @@ def main():
             msg["To"] = ", ".join(tos)
             srv.sendmail(mail_from, tos, msg.as_string())
             sent += 1
-            print(f"[notify] emailed {len(lines)} {label} change group(s) to {', '.join(tos)}")
+            print(f"[notify] emailed {len(lines)} {label} change group(s) to {len(tos)} recipient(s)")
     finally:
         try:
             srv.quit()
