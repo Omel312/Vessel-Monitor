@@ -7,9 +7,22 @@ ALORDER = ["ZIM+MSC","Gemini","Ocean Alliance","Premier Alliance"]
 ALCOLOR = {"ZIM+MSC":"#0b3d5c","Gemini":"#1f6fb2","Ocean Alliance":"#2e7d4f","Premier Alliance":"#7a4ea3"}
 
 # One entry per recipient. Each lane: asia load port, set of US target ports, label, and alliances to exclude.
-# Recipient emails come from the MARKET_RECIPIENTS secret: a JSON array with one
-# address per CONFIGS entry, in the same order.
-RECIPIENTS = json.loads(os.environ.get("MARKET_RECIPIENTS") or "[]")
+# Recipients come from one flat secret per lane, in CONFIGS order:
+# MARKET_SHA_NY, MARKET_YTN_NY, MARKET_HOU. One value per secret so that
+# GitHub can actually redact it if it ever reaches a log.
+_LEGACY = json.loads(os.environ.get("MARKET_RECIPIENTS") or "[]")
+
+
+def _lane(i, name):
+    v = (os.environ.get(name) or "").strip()
+    if v:
+        return v
+    return _LEGACY[i] if i < len(_LEGACY) else ""
+
+
+RECIPIENTS = [_lane(0, "MARKET_SHA_NY"),
+              _lane(1, "MARKET_YTN_NY"),
+              _lane(2, "MARKET_HOU")]
 NY = {"new york","newark","new york / newark"}
 CONFIGS = [
     {"title": "Shanghai to New York / Newark",
@@ -170,7 +183,7 @@ def send(to_addr, subject, html):
     pw = os.getenv("SMTP_PASS") or os.getenv("GMAIL_APP_PASSWORD")
     frm = os.getenv("MAIL_FROM") or user
     if not (user and pw):
-        print("No SMTP creds; skipping send to", to_addr)
+        print("No SMTP creds; skipping send")
         return False
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
@@ -178,21 +191,28 @@ def send(to_addr, subject, html):
     msg.attach(MIMEText("See the HTML version of this message.", "plain"))
     msg.attach(MIMEText(html, "html"))
     ctx = ssl.create_default_context()
-    if port == 465:
-        with smtplib.SMTP_SSL(host, port, context=ctx) as srv:
-            srv.login(user, pw); srv.sendmail(frm, [to_addr], msg.as_string())
-    else:
-        with smtplib.SMTP(host, port) as srv:
-            srv.starttls(context=ctx); srv.login(user, pw); srv.sendmail(frm, [to_addr], msg.as_string())
-    print("Sent to", to_addr)
+    try:
+        if port == 465:
+            with smtplib.SMTP_SSL(host, port, context=ctx) as srv:
+                srv.login(user, pw); srv.sendmail(frm, [to_addr], msg.as_string())
+        else:
+            with smtplib.SMTP(host, port) as srv:
+                srv.starttls(context=ctx); srv.login(user, pw); srv.sendmail(frm, [to_addr], msg.as_string())
+    except smtplib.SMTPException as e:
+        # Never let the address escape through an exception message.
+        raise RuntimeError("send failed: " + type(e).__name__) from None
+    print("Sent OK")
     return True
 
 def main():
     mj = load("market.json")
-    if not RECIPIENTS:
-        print("[market_notify] MARKET_RECIPIENTS secret not set - nothing sent")
+    if not any(str(r).strip() for r in RECIPIENTS):
+        print("[market_notify] no recipient secrets set - nothing sent")
         return
     for cfg, to in zip(CONFIGS, RECIPIENTS):
+        if not str(to).strip():
+            print("No recipient configured for:", cfg["title"], "- skipped")
+            continue
         html = build_html(mj, cfg)
         subject = "Market Profile — " + cfg["title"]
         send(to, subject, html)
