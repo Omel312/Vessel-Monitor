@@ -23,14 +23,29 @@ Env:
 import json, os, re, smtplib, subprocess, sys
 from email.mime.text import MIMEText
 
-# Recipients come from the NOTIFY_RECIPIENTS secret (JSON), e.g.
-# {"EM": ["Name", "a@x.com, b@y.com"], "AM": ["Name", ["a@x.com"]], ...}
-_RECIP = json.loads(os.environ.get("NOTIFY_RECIPIENTS") or "{}")
+# Recipients come from one flat secret per service: NOTIFY_EM, NOTIFY_AM,
+# NOTIFY_LS, NOTIFY_CH. Each holds one address, or several separated by commas.
+#
+# One value per secret is deliberate. GitHub redacts a log line only when it
+# finds an exact match for a secret's value, so a JSON blob whose parts get
+# pulled out in code cannot be redacted. Never print an address from here.
+_LEGACY = json.loads(os.environ.get("NOTIFY_RECIPIENTS") or "{}")
+
+
+def _addr(code):
+    """Flat per-service secret, falling back to the old JSON secret."""
+    v = (os.environ.get("NOTIFY_" + code) or "").strip()
+    if v:
+        return v
+    old = _LEGACY.get(code) or ("", "")
+    return old[1] if len(old) > 1 else ""
+
+
 SVCS = {
-    "EM": ("EMPIRE",) + tuple(_RECIP.get("EM") or ("", "")),
-    "AM": ("AMERICA",) + tuple(_RECIP.get("AM") or ("", "")),
-    "LS": ("LONE STAR",) + tuple(_RECIP.get("LS") or ("", "")),
-    "CH": ("CHINOOK",) + tuple(_RECIP.get("CH") or ("", "")),
+    "EM": ("EMPIRE",    "Empire Service",    _addr("EM")),
+    "AM": ("AMERICA",   "America Service",   _addr("AM")),
+    "LS": ("LONE STAR", "Lone Star Service", _addr("LS")),
+    "CH": ("CHINOOK",   "Chinook Service",   _addr("CH")),
 }
 DOY = {"Jan": 0, "Feb": 31, "Mar": 59, "Apr": 90, "May": 120, "Jun": 151,
        "Jul": 181, "Aug": 212, "Sep": 243, "Oct": 273, "Nov": 304, "Dec": 334}
@@ -373,7 +388,14 @@ def main():
             msg["Subject"] = f"{label} - MSC Schedule daily change - {date}"
             msg["From"] = mail_from
             msg["To"] = ", ".join(tos)
-            srv.sendmail(mail_from, tos, msg.as_string())
+            try:
+                srv.sendmail(mail_from, tos, msg.as_string())
+            except smtplib.SMTPException as e:
+                # "from None" drops the original exception, whose text would
+                # otherwise carry the rejected address into a public log.
+                raise RuntimeError(
+                    "send failed for %s: %s" % (label, type(e).__name__)
+                ) from None
             sent += 1
             print(f"[notify] emailed {len(lines)} {label} change group(s) to {len(tos)} recipient(s)")
     finally:
