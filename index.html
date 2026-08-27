@@ -794,7 +794,7 @@ function renderXL(){
   if(!items.length){el.innerHTML="";return;}
   var rows=items.map(function(x){
     var rot=(x.asia||[]).join(" \u2192 ")+"  \u21d2  "+(x.us||[]).join(" \u2192 ");
-    var sch=(x.rotation||x.schedule||[]).map(function(s){return "<span class=\"xlpill\">"+s.port+" "+(s.etd?("ETD "+s.etd):("ETA "+s.eta))+"</span>";}).join("");
+    var usSet={};(x.us||[]).forEach(function(u){usSet[u]=1;});var sch=(x.rotation||x.schedule||[]).map(function(s){var isUs=!!usSet[s.port];var lab=isUs?(s.eta?("ETA "+s.eta):("ETD "+s.etd)):(s.etd?("ETD "+s.etd):("ETA "+s.eta));return "<span class=\"xlpill"+(isUs?" xlpillus":"")+"\">"+s.port+" "+lab+"</span>";}).join("");
     var tr="";
     if(x.transit){tr=Object.keys(x.transit).map(function(a){var us=x.transit[a];return "<div class=\"xltr\"><b>"+a+"</b>: "+Object.keys(us).map(function(u){return u+" "+us[u]+"d";}).join(", ")+"</div>";}).join("");}
     var vp="";
@@ -808,7 +808,7 @@ function renderXL(){
       +"<div class=\"xlsch\">"+sch+"</div>"+tr+vp+note+"</div>";
   }).join("");
   el.innerHTML="<div class=\"card\" style=\"margin-top:14px\"><h3 style=\"margin:0 0 4px\">Extra Loaders</h3>"
-    +"<div style=\"font-size:12px;opacity:.75;margin-bottom:10px\">Additional, occasional sailings run outside the regular proforma services. As of "+((XL&&XL.asOf)||"")+".</div>"
+    +"<div style=\"font-size:12px;opacity:.75;margin-bottom:10px\">Additional, occasional sailings run outside the regular proforma services. As of "+((XL&&(XL.asOf||XL.updated))||"")+".</div>"
     +rows+"</div>";
 }
 function renderMarket(){ try{renderXL();}catch(e){}
