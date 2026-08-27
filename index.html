@@ -771,7 +771,7 @@ function renderNotif(){
   el.innerHTML=`<div class="notif${notifOpen?' open':''}"><div class="notif-h"><span class="bell">🔔</span><span class="ti">Port omissions &amp; changes${scope}</span><span class="cnt ${n?'':'zero'}">${n}</span><span class="since">as of ${curDate} · vs ${since}</span><span class="chev">▾</span></div><div class="notif-body">${rows}</div></div>`;
   el.querySelector('.notif-h').addEventListener('click',()=>{notifOpen=!notifOpen;el.querySelector('.notif').classList.toggle('open');});
 }
-let MKT=null, mAlliance='ZIM+MSC', mAsia='ALL', mUs='ALL', mSel=null;
+let XLD=null; let MKT=null, mAlliance='ZIM+MSC', mAsia='ALL', mUs='ALL', mSel=null;
 const ALORDER=["ZIM+MSC","Gemini","Ocean Alliance","Premier Alliance",'WHL+HPL'];const ALCOLOR={"ZIM+MSC":"#0b3d5c","Gemini":"#1f6fb2","Ocean Alliance":"#2e7d4f","Premier Alliance":"#7a4ea3",'WHL+HPL':'#7a4d1f'};const alKeys=()=>{var k=Object.keys((MKT&&MKT.alliances)||{});return ALORDER.filter(a=>k.indexOf(a)>=0).concat(k.filter(a=>ALORDER.indexOf(a)<0));};
 function isoWeekOf(dt){var d=new Date(Date.UTC(dt.getUTCFullYear(),dt.getUTCMonth(),dt.getUTCDate()));var dy=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-dy+3);var w1=new Date(Date.UTC(d.getUTCFullYear(),0,4));return 1+Math.round(((d-w1)/864e5-3+((w1.getUTCDay()+6)%7))/7);}
 const MWEEKS=(function(){var a=[],t=Date.now();for(var i=0;i<8;i++)a.push(isoWeekOf(new Date(t+i*604800000)));return a;})();
@@ -789,17 +789,16 @@ function mkActivePort(s){ if(mAsia!=='ALL'){var kk=Object.keys(s.ports).filter(k
 function renderXL(){
   var el=document.getElementById("xloaders"); if(!el)return;
   var M=(typeof MKT!=="undefined")?MKT:null;
-  var XL=(M&&M.extraLoaders)||null;
+  var XL=(XLD&&XLD.items&&XLD.items.length)?XLD:((M&&M.extraLoaders)||null);
   var items=(XL&&XL.items)||[];
   if(!items.length){el.innerHTML="";return;}
   var rows=items.map(function(x){
     var rot=(x.asia||[]).join(" \u2192 ")+"  \u21d2  "+(x.us||[]).join(" \u2192 ");
-    var sch=(x.schedule||[]).map(function(s){return "<span class=\"xlpill\">"+s.port+" "+(s.etd?("ETD "+s.etd):("ETA "+s.eta))+"</span>";}).join("");
+    var sch=(x.rotation||x.schedule||[]).map(function(s){return "<span class=\"xlpill\">"+s.port+" "+(s.etd?("ETD "+s.etd):("ETA "+s.eta))+"</span>";}).join("");
     var tr="";
     if(x.transit){tr=Object.keys(x.transit).map(function(a){var us=x.transit[a];return "<div class=\"xltr\"><b>"+a+"</b>: "+Object.keys(us).map(function(u){return u+" "+us[u]+"d";}).join(", ")+"</div>";}).join("");}
     var vp="";
-    if(x.vsProforma){var d=x.vsProforma.deltaDaysToNewYork||{};var parts=Object.keys(d).map(function(k){var v=d[k];return k+" "+(v>0?"+":"")+v+"d";});
-      vp="<div class=\"xlvs\">vs "+x.vsProforma.svc+(parts.length?(" \u2014 to New York: "+parts.join(", ")):"")+"</div>";}
+    if(x.vsProforma){var P=x.vsProforma;var txt="";if(typeof P.deltaDays==="number"){txt=" \u2014 "+(P.pair||"")+": "+(P.xlDays!=null?P.xlDays+"d vs "+P.proformaDays+"d proforma, ":"")+(P.deltaDays>0?"+":"")+P.deltaDays+"d";}else{var d=P.deltaDaysToNewYork||{};var parts=Object.keys(d).map(function(k){var v=d[k];return k+" "+(v>0?"+":"")+v+"d";});if(parts.length)txt=" \u2014 to New York: "+parts.join(", ");}vp="<div class=\"xlvs\">vs "+P.svc+txt+"</div>";}
     var un=x.verified?"":" xlunver";
     var note=x.note?("<div class=\"xlnote\">"+x.note+"</div>"):"";
     var teu=x.teu?(x.teu.toLocaleString()+" TEU"):"TEU n/a";
@@ -880,6 +879,7 @@ async function boot(){
   catch(e){document.getElementById('updated').textContent='could not load data.json';DATA={};}
   try{const rp=await fetch('data_prev.json?cb='+Date.now());if(rp.ok)PREV=await rp.json();}catch(e){PREV=null;}
   try{const rm=await fetch('market.json?cb='+Date.now());if(rm.ok)MKT=await rm.json();}catch(e){MKT=null;}
+  try{const rx=await fetch('extra_loaders.json?cb='+Date.now());if(rx.ok)XLD=await rx.json();}catch(e){XLD=null;}
   renderMarket();
   computeChanges();
   computeOmissions();
