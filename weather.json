@@ -1,40 +1,19 @@
 {
-  "updated": "28 Aug 2026, 22:15 UTC — JMA active-cyclone feed + port/terminal advisories",
-  "asOf": "2026-08-28",
+  "updated": "30 Aug 2026, 13:10 UTC — JMA active-cyclone feed + port/terminal advisories",
+  "asOf": "2026-08-30",
   "sources": [
-    "JMA bosai typhoon feed — targetTc.json plus specifications for TC2621 (Saudel, now TD), TC2625 (Etau, TS) and TC2626 (Bang-lang, STS), issued 29 Aug 2026 03:50-07:05 JST / 28 Aug 18:50-22:05 UTC. TC2626 has been upgraded from TD to STS and named Bang-lang since the last run; Saudel has been downgraded from TY to TD and is on its final advisory with no forecast track.",
-    "SEKO Asia-Pacific Logistics Monitoring Center, updated 28 Aug 2026 13:00 HKT — SIPG phased gate-resumption timetable, Ningbo-Zhoushan terminal restart, and terminal-level berth waiting times (https://www.sekologistics.com/hk-en/resources/asia-supply-chain-weather-center-live-port-freight-updates/)",
-    "Kuehne+Nagel myKN sea news, 'Typhoon Saudel makes landfall; East China ports reopen as storm weakens', updated 28 Aug 2026 — Waigaoqiao 12:00, Yangshan 14:00, Ningbo terminals 15:00 restart times; Ningbo emergency response stepped down from Level I to Level II (https://mykn.kuehne-nagel.com/news/article/typhoon-saudel-bears-down-on-east-china)",
-    "Toll Global Forwarding customer advisory, 'Operational impact of Typhoon Saudel', 26 Aug 2026 — local team reported no impact to Xiamen port operations (https://www.tollgroup.com/solutions/transportation/customer-advisories/operational-impact-typhoon-saudel)",
-    "MSC customer advisories checked 28 Aug 2026 — no Saudel port-closure notice posted; most recent items are Golden Week sailing programmes and Red Sea service resumption (https://www.msc.com/en/newsroom/customer-advisories)"
+    "JMA bosai typhoon feed — targetTc.json plus specifications for TC2626 (Bang-lang, TS) and TC2625 (Etau, TS), issued 30 Aug 2026 12:50 and 10:05 UTC. Saudel (TC2621) has dropped out of the active feed since the previous run.",
+    "SEKO Asia-Pacific Logistics Monitoring Center — last updated Friday 28 Aug 2026 13:00 HKT and unchanged since the previous run: SIPG and Ningbo-Zhoushan gate-resumption timetable, yard occupancy and terminal-level berth waiting times (https://www.sekologistics.com/hk-en/resources/asia-supply-chain-weather-center-live-port-freight-updates/)",
+    "Kuehne+Nagel myKN sea news, 'Port congestion set to remain a moving target for shippers' — Shanghai berth waits of approximately 6 to 11 days after consecutive typhoons; Seaexplorer global schedule reliability 51.9% in July with vessels around six days late (https://mykn.kuehne-nagel.com/news/article/port-congestion-set-to-remain-a-moving-target)",
+    "MSC customer advisories checked 30 Aug 2026 — no port-closure or weather-suspension notice posted; the most recent China-related item is the 26 Aug Golden Week sailing programme (https://www.msc.com/en/newsroom/customer-advisories)"
   ],
   "systems": [
     {
-      "name": "Saudel",
-      "cat": "TD",
-      "pos": [
-        27,
-        116
-      ],
-      "threats": [
-        {
-          "port": "Xiamen",
-          "km": 352,
-          "inH": 0
-        },
-        {
-          "port": "Shenzhen (Yantian)",
-          "km": 540,
-          "inH": 0
-        }
-      ]
-    },
-    {
       "name": "Bang-lang",
-      "cat": "STS",
+      "cat": "TS",
       "pos": [
-        21.1,
-        167.5
+        34.5,
+        166.3
       ],
       "threats": []
     },
@@ -42,8 +21,8 @@
       "name": "Etau",
       "cat": "TS",
       "pos": [
-        26.5,
-        166
+        31,
+        165.7
       ],
       "threats": []
     }
@@ -53,31 +32,19 @@
       "status": "recovering",
       "event": "Typhoon Saudel",
       "since": "26 Aug",
-      "eventEnded": null,
+      "eventEnded": "2026-08-30",
       "reportedWaitLo": 5,
-      "reportedWaitHi": 9,
-      "waitLabel": "WGQ2/WGQ5 9+ days · Yangshan 7+ days · Ningbo 5-6 days (SEKO, 28 Aug)",
-      "note": "Both halves reopened on 28 Aug. SIPG restarted Waigaoqiao empty gates and Yangshan laden gates at 12:00 HKT and Yangshan empty gates at 14:00 HKT; Ningbo-Zhoushan terminals resumed laden and empty gate-in and pick-up at 15:00 HKT, with yards back at 12:00 and warehouses at 08:00. Ningbo stepped its emergency response down from Level I to Level II, Shanghai holds at Level II. Landside is moving again but the water side is not: SEKO puts berth waits at 9+ days for WGQ2 and WGQ5, 7+ days at Yangshan Phase 1-2, and 5-6 days across Ningbo as bunched vessels come back in. Yard occupancy is Waigaoqiao 76%, Yangshan 1-2 85%, Ningbo MSICT 95% with other Ningbo terminals near 92%. Expect heavy roll-overs through Weeks 35 and 36.",
-      "source": "SEKO Asia-Pacific Logistics Monitoring Center (28 Aug 13:00 HKT); Kuehne+Nagel myKN advisory (28 Aug)"
-    },
-    "Xiamen": {
-      "status": "recovering",
-      "event": "Typhoon Saudel",
-      "since": "22 Aug",
-      "eventEnded": "2026-08-28",
-      "reportedWaitLo": null,
-      "reportedWaitHi": null,
-      "note": "Xiamen came through the watch period essentially untouched. Toll's local team reported no impact to port operations on 26 Aug, and SEKO on 28 Aug has Xiamen stabilising as vessel tie-downs are cleared and feeder connections progressively restart. Saudel made landfall to the north on the Zhejiang-Fujian border and is tracking inland to the west, so the threat to Fujian is over. Marked as ended 28 Aug — this entry clears itself in two days.",
-      "source": "SEKO Asia-Pacific Logistics Monitoring Center (28 Aug 13:00 HKT); Toll Global Forwarding advisory (26 Aug)"
+      "reportedWaitHi": 11,
+      "waitLabel": "Shanghai 6-11 days (K+N) · WGQ2/WGQ5 9+ days · Yangshan 7+ days · Ningbo 5-6 days (SEKO, 28 Aug)",
+      "note": "Both gateways have been open since 28 Aug, when SIPG restarted Waigaoqiao empty gates and Yangshan laden gates at 12:00 HKT and Yangshan empty gates at 14:00 HKT, and Ningbo-Zhoushan resumed laden and empty gate-in and pick-up at 15:00 HKT. Saudel has now dropped out of the JMA active feed, so the weather side of this is finished and eventEnded is set. The queue is not finished: SEKO's 28 Aug figures put Waigaoqiao 2 and 5 at 9+ days and Yangshan 1 and 2 at 7+ days with Ningbo climbing to 5-6, yard occupancy 76% at Waigaoqiao, 85% at Yangshan 1 and 2 and 92-95% across the Ningbo terminals; Kuehne+Nagel puts Shanghai at roughly 6-11 days and expects several more weeks of vessel bunching and rotation changes. No source published a fresher figure on 29 or 30 Aug.",
+      "source": "SEKO Asia-Pacific Logistics Monitoring Center (28 Aug 2026 13:00 HKT); Kuehne+Nagel myKN 'Port congestion set to remain a moving target for shippers'"
     }
   },
   "remarks": [
-    "Saudel is finished as a weather event. JMA has it down to a tropical depression at 27N 116E over central-southern China, 996 hPa, running west at 30 km/h, and the 29 Aug 03:50 JST bulletin carries no forecast track — it should drop out of the feed within a day. What it left behind is the story now.",
-    "Shanghai/Ningbo is the one that matters. It reopened on 28 Aug but sits on 1.53m TEU at anchorage and a queue-to-berth ratio of 2.68 on the 23 Aug Linerlytica snapshot, and that was before the shutdown. Berth waits of 9+ days at Waigaoqiao on top of a backlog never fully cleared from Typhoon Dolphin earlier in the month means this queue gets worse before it gets better.",
-    "Shanghai/Ningbo moves from suspended to recovering this run. That also switches off the site's 'berths idle' flag for the pair, which is correct now that the gates are open.",
-    "Xiamen is dropped from watch with an end date of 28 Aug. It never actually closed — 27,320 TEU at anchorage and a 0.29 ratio on the latest snapshot is a quiet roadstead. Saudel is still inside 600 km of it and of Shenzhen, but as a decaying depression over land, so both rank as watch only.",
-    "Bang-lang has been upgraded to a severe tropical storm and named since the last run, and Etau is still out there, but both are near Wake Island, 3,300 km from the nearest tracked port. Neither is a threat this week.",
-    "Qingdao is worth a mention without an entry: SEKO logs a 21-hour closure on 24 Aug from rough seas, but waits are back to 1-1.5 days and the only live constraint is maintenance dredging at QQCTU blocking one berth through mid-September. That is routine, not an event.",
-    "Yantian's 5-6 day waits for mega vessels are chronic congestion ahead of Golden Week, not weather. Not logged as a port event."
+    "Saudel is over. It is gone from the JMA targetTc feed for the first time this run, so Shanghai/Ningbo gets eventEnded 2026-08-30 and winds off the weather panel in two days. The backlog it left behind does not disappear with it — that story now belongs to the congestion chart.",
+    "No tropical cyclone anywhere near a tracked port. The two active systems, Bang-lang and Etau, are both tropical storms sitting well east of Japan around 165-166E. Closest approach across every analysis and forecast point is 3,288 km, Bang-lang to Busan, more than five times the 600 km threat radius. Neither carries a threat entry.",
+    "Shanghai/Ningbo is the only live port entry. Waits of 5 to 11 days depending on terminal, against 1.53m TEU at anchorage and a queue-to-berth ratio of 2.68 on the last Linerlytica snapshot. Gates are open, water side is not.",
+    "Xiamen has been dropped. Its eventEnded of 28 Aug has run out, feeder connections restarted, and its Linerlytica ratio of 0.29 on 27,320 TEU is the lightest queue of any tracked port. Nothing left to flag.",
+    "Heads up on the congestion chart, not the weather: Linerlytica has published nothing since 23 Aug. Its publish-date endpoint was checked live on 30 Aug and still ends there, so congestion.json is a week stale through no fault of this run and has been left untouched."
   ]
 }
