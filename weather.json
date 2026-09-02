@@ -1,31 +1,46 @@
 {
-  "updated": "1 Sep 2026, 22:13 UTC — JMA active-cyclone feed + port/terminal advisories",
-  "asOf": "2026-09-01",
+  "updated": "2 Sep 2026, 22:14 UTC — JMA active-cyclone feed + port/terminal advisories",
+  "asOf": "2026-09-02",
   "sources": [
-    "JMA bosai typhoon feed — targetTc.json plus specifications.json for TC2621 (Saudel, TS, storm No. 2618, issued 2 Sep 2026 07:05 JST) and TC2628 (Krovanh, TS, storm No. 2624, issued 2 Sep 2026 06:45 JST). Saudel's remnant circulation regenerated over the northwestern South China Sea on 1 Sep after its 28 Aug Zhejiang landfall; the JMA track has it running northeast to the Taiwan Strait approaches, then curving back southwest toward the Pearl River Delta and weakening to a depression by +93h.",
-    "SEKO Asia-Pacific Logistics Monitoring Center — refreshed Tuesday 1 September 2026, 14:00 HKT after four runs stuck on 28 August. Terminal-level berth waiting times for Shanghai (Waigaoqiao, Yangshan), Ningbo-Zhoushan, Yantian, Shekou/Nansha, Qingdao, Busan and Singapore, plus yard occupancy and CMA rainstorm warnings for Fujian (https://www.sekologistics.com/hk-en/resources/asia-supply-chain-weather-center-live-port-freight-updates/).",
-    "MSC customer advisories, checked 1 Sep 2026 22:10 UTC — no port-closure or terminal-suspension notice posted for this phase of Saudel; the most recent operational item is the 24 Aug Red Sea service resumption (https://www.msc.com/en/newsroom/customer-advisories).",
-    "Kuehne+Nagel weekly port operational update — no edition published for 31 Aug or 1 Sep 2026 (both URLs return 'Article not found'), so the 25 Aug figures were not carried forward and SEKO's 1 Sep numbers are used instead.",
-    "Web search corroboration for Yantian mega-vessel waiting times and ETB-7 gate controls, and for the Shanghai/Ningbo post-Saudel backlog."
+    "JMA bosai typhoon feed — targetTc.json lists two active systems: TC2621 (Saudel, TS, storm No. 2618, issued 3 Sep 2026 07:05 JST) and TC2628 (Krovanh, TS, storm No. 2624, issued 3 Sep 2026 06:45 JST). Saudel's analysis position is 23.6N 117.8E in the Taiwan Strait approaches, moving NNW slowly at 992 hPa, 35 kt sustained; the JMA forecast turns it west-southwest to 23.3N 115.9E off eastern Guangdong within 24 hours and downgrades it to a tropical depression at that point. Krovanh is at 25.1N 130.6E east of Okinawa, tracking north to 28.7N 127.3E by +24h, then recurving back south and east — its closest approach to the Yangtze delta is 510 km at +45h.",
+    "SEKO Asia-Pacific Logistics Monitoring Center — still showing the Tuesday 1 September 2026, 14:00 HKT revision at the time of this run (no update in the 24 hours since the last check). Terminal-level berth waiting times for Shanghai (Waigaoqiao WGQ2/WGQ5, Yangshan 1-4), Ningbo-Zhoushan, Yantian, Shekou/Nansha, Qingdao, Busan and Singapore, plus yard occupancy and CMA rainstorm warnings for Fujian and Guangdong (https://www.sekologistics.com/hk-en/resources/asia-supply-chain-weather-center-live-port-freight-updates/).",
+    "The Loadstar, 1 September 2026 — 'Berthing delay at congested Shanghai and Ningbo now hitting 10 days': ten-day berthing waits at both ports, Linerlytica counting 3.92m TEU idle globally and North Asia carrying 54% of it, about 2.5m TEU waiting to berth (https://theloadstar.com/berthing-delay-at-congested-shanghai-and-ningbo-now-hitting-10-days/).",
+    "MSC customer advisories checked via Chrome — no port-closure notice for any Chinese gateway; the most recent operational postings are the 2026 Golden Week sailing programmes (26 Aug) and the Red Sea service resumption (24 Aug) (https://www.msc.com/en/newsroom/customer-advisories).",
+    "Kuehne+Nagel weekly port operational update — no article published for 01-09-2026 or 02-09-2026 (myKN returns 'article not found'), so no third-source waiting-time figures were available this run."
   ],
   "systems": [
     {
       "name": "Saudel",
       "cat": "TS",
       "pos": [
-        22,
-        116.8
+        23.6,
+        117.8
       ],
       "threats": [
         {
-          "port": "Shenzhen (Yantian)",
-          "km": 88,
-          "inH": 69
+          "port": "Xiamen",
+          "km": 99,
+          "inH": 0
         },
         {
-          "port": "Xiamen",
-          "km": 175,
+          "port": "Shenzhen (Yantian)",
+          "km": 217,
           "inH": 24
+        }
+      ]
+    },
+    {
+      "name": "Krovanh",
+      "cat": "TS",
+      "pos": [
+        25.1,
+        130.6
+      ],
+      "threats": [
+        {
+          "port": "Shanghai/Ningbo",
+          "km": 510,
+          "inH": 45
         }
       ]
     }
@@ -33,14 +48,25 @@
   "ports": {
     "Shanghai/Ningbo": {
       "status": "recovering",
-      "event": "Tropical Storm Saudel (post-landfall backlog unresolved)",
+      "event": "Tropical Storm Krovanh (post-Saudel backlog unresolved)",
       "since": "26 Aug",
       "eventEnded": null,
       "reportedWaitLo": 7,
       "reportedWaitHi": 10,
-      "waitLabel": "Waigaoqiao (WGQ2/WGQ5) and Yangshan 1-4 at 7-10+ days; Ningbo-Zhoushan exceeding 10 days in the worst cases (SEKO, 1 Sep)",
-      "note": "eventEnded is cleared back to null this run. It had been set to 2026-08-30 on the assumption Saudel had stopped being a factor, and that call was wrong: JMA has Saudel active again as a named tropical storm, and SEKO's 1 Sep update has waiting times deteriorating rather than clearing — Shanghai from 6-11 to 7-10+ days, Ningbo now past 10 days, Yangshan yard density 85-88%, Meishan 95%, reefer plugs 94%. Linerlytica's 30 Aug snapshot agrees: 1.68M TEU at anchorage on 288.5 ships and a queue-to-berth ratio of 3.24, up from 2.53 the day before. Saudel itself is about 920 km southwest and tracking away, so this is backlog, not a live threat to the berths. Both gateways have been open since 28 Aug.",
-      "source": "SEKO Asia-Pacific Logistics Monitoring Center, 1 Sep 2026 14:00 HKT"
+      "waitLabel": "Waigaoqiao (WGQ2/WGQ5) and Yangshan 1-4 at 7-10+ days; Ningbo-Zhoushan exceeding 10 days in the worst cases (SEKO, 1 Sep; Loadstar puts both ports at 10 days on the same date)",
+      "note": "The primary event name moves from Saudel to Krovanh this run, and the reason is mechanical rather than editorial: Saudel has crossed to the South China Sea and is no longer the system near the Yangtze delta, while Krovanh is, with a 510 km closest approach at +45h. The backlog itself is unchanged and still Saudel's. Linerlytica's 30 Aug snapshot has Shanghai/Ningbo at 1.68m TEU on 288.5 ships at anchorage with a queue-to-berth ratio of 3.24, up from 2.53 the previous day — the queue was still building on the last day the source published, so nothing here justifies dropping the entry. No source newer than 1 Sep states a waiting-time figure, so the 7-10 day range is carried at its stated vintage rather than being refreshed.",
+      "source": "SEKO Asia-Pacific Logistics Monitoring Center (1 Sep 2026, 14:00 HKT); The Loadstar, 1 Sep 2026; JMA TC2628 specifications"
+    },
+    "Xiamen": {
+      "status": "watch",
+      "event": "Tropical Storm Saudel",
+      "since": "30 Aug",
+      "eventEnded": null,
+      "reportedWaitLo": null,
+      "reportedWaitHi": null,
+      "waitLabel": "",
+      "note": "Saudel's closest approach to any tracked port this run — 99 km, right now. SEKO has Xiamen gates open with Taiwan Strait swell rolling scheduled feeder sailings, and no source reports a terminal suspension or a berth waiting figure, so the status stays watch and both wait fields stay null. Saudel is forecast to weaken to a tropical depression within 24 hours as it moves away to the west-southwest, so this entry should be a candidate for eventEnded on the next run if the system leaves the JMA feed.",
+      "source": "JMA TC2621 specifications; SEKO Asia-Pacific Logistics Monitoring Center (1 Sep 2026)"
     },
     "Shenzhen (Yantian)": {
       "status": "watch",
@@ -50,26 +76,14 @@
       "reportedWaitLo": 5,
       "reportedWaitHi": 6,
       "waitLabel": "Mega-vessels 5-6 days, sub-330m 3-5 days, ETB-7 laden export intake enforced (SEKO, 1 Sep)",
-      "note": "Saudel's regeneration has raised swell in the outer anchorages. The JMA track brings it back within about 88 km of Yantian at +69h (roughly 5 Sep) as a weakening storm, which is the closest approach of any active system to any tracked port. Terminals are working normally and no carrier or terminal has announced a closure. Linerlytica has only 57k TEU at anchorage here on 30 Aug with a ratio of 0.39, so the queue is light — the risk is forward-looking, not present.",
-      "source": "SEKO Asia-Pacific Logistics Monitoring Center, 1 Sep 2026 14:00 HKT; JMA TC2621 forecast track"
-    },
-    "Xiamen": {
-      "status": "watch",
-      "event": "Tropical Storm Saudel",
-      "since": "30 Aug",
-      "eventEnded": null,
-      "reportedWaitLo": null,
-      "reportedWaitHi": null,
-      "waitLabel": null,
-      "note": "Gates are operating, but Taiwan Strait swell is disrupting scheduled feeder sailings and coastal connections are rolling. Saudel passes about 175 km south at +24h and CMA has yellow rainstorm warnings out for Fujian with up to 280 mm in the northeast of the province. No source states a berth waiting time for Xiamen, so none is recorded.",
-      "source": "SEKO Asia-Pacific Logistics Monitoring Center, 1 Sep 2026 14:00 HKT; JMA TC2621 forecast track"
+      "note": "Saudel's forecast track turns west-southwest toward the Pearl River Estuary, closing to 217 km at +24h, though it is expected to be a tropical depression by then. Outer-anchorage swell is already elevated per SEKO and Shekou/Nansha are running 1.5-2 day berth delays with intermittent RTG stoppages in heavy rain. Terminals are open, so this stays watch rather than suspended.",
+      "source": "JMA TC2621 specifications; SEKO Asia-Pacific Logistics Monitoring Center (1 Sep 2026)"
     }
   },
   "remarks": [
-    "Nothing is suspended. Saudel is a tropical storm again after its 28 Aug Zhejiang landfall and is crossing the northern South China Sea, but it is forecast to weaken to a depression as it curls back toward the Pearl River Delta, and no terminal or carrier has announced a closure for this phase.",
-    "Yantian is the one to watch: JMA's track brings Saudel within roughly 88 km on about 5 Sep. The queue there is currently small, so a short closure would be absorbable — the concern is a second South China disruption landing while East China is still 10 days deep in backlog.",
-    "The real story is still Shanghai/Ningbo, and it is getting worse rather than better. SEKO's 1 Sep update puts Ningbo waits above 10 days and Shanghai at 7-10+, against Linerlytica's 1.68M TEU at anchorage and a queue-to-berth ratio of 3.24 on 30 Aug.",
-    "A second named system, Krovanh (TC2628), is nearly stationary south of Japan and drifting toward the Amami islands. Its closest forecast approach to a tracked port is about 670 km from Shanghai/Ningbo and 725 km from Busan, both outside the 600 km threshold, so it is left out of the incoming table.",
-    "Qingdao (1.5-2 days), Busan (1.5-2 days) and Singapore (1-1.5 days) are all reported at normal-to-mild delay levels with no weather event attached, so they are omitted rather than listed as open."
+    "Two active tropical storms, neither of them closing any port. Saudel sits 99 km off Xiamen and is forecast to weaken to a depression within 24 hours as it drifts toward eastern Guangdong; Krovanh is east of Okinawa and never gets closer than 510 km to Shanghai/Ningbo.",
+    "The congestion at Shanghai and Ningbo is now a backlog story rather than a weather story. Both ports have been open since 28 August, and the 7-10+ day berth queues are the accumulated bunching from Saudel's landfall rather than any current closure.",
+    "No source published a fresh waiting-time figure in the 24 hours before this run — SEKO is still on its 1 September revision and Kuehne+Nagel has no port update for 1 or 2 September. Every wait figure here is carried at its 1 September vintage and none has been re-estimated.",
+    "Linerlytica has not published a congestion snapshot since 30 August, so the queue figures behind the site's rankings are four days old."
   ]
 }
